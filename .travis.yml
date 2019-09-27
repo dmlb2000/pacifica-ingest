@@ -14,7 +14,7 @@ env:
   BROKER_URL: redis://127.0.0.1:6379/0
   ADMIN_USER_ID: 10
   ARCHIVEINTERFACE_URL: http://127.0.0.1:9080
-".script": &1
+script:
 - pip install 'redis'
 - export INGEST_CPCONFIG="$PWD/server.conf"
 - export INGEST_CONFIG="$PWD/travis/config.ini"
@@ -63,19 +63,10 @@ env:
   set +x
 - coverage combine .coverage*
 - coverage report -m --fail-under 100
-".before_script": &2
-- psql -c 'create database pacifica_metadata;' -U postgres
-- psql -c 'create database pacifica_ingest;' -U postgres
-- export METADATA_CPCONFIG="$PWD/travis/metadata/server.conf"
-- export POLICY_CPCONFIG="$PWD/travis/policy/server.conf"
-- export UNIQUEID_CPCONFIG="$PWD/travis/uniqueid/server.conf"
-- export UNIQUEID_CONFIG="$PWD/travis/uniqueid/config.ini"
-- export ARCHIVEINTERFACE_CPCONFIG="$PWD/travis/archivei/server.conf"
-- pacifica-metadata-cmd dbsync
-- pacifica-uniqueid-cmd dbsync
-- pacifica-metadata & echo $! > metadata.pid
-- uwsgi --http-socket :9080 --master --module 'pacifica.archiveinterface.wsgi' & echo $! > archivei.pid
-- pacifica-uniqueid & echo $! > uniqueid.pid
+before_script:
+- pip install ansible
+- ansible-galaxy install pacifica.ansible_pacifica pacifica.ansible_travis
+- ansible-playbook ~/.ansible/roles/pacifica.ansible_travis/molecule/common/playbook.yml -i ~/.ansible/roles/pacifica.ansible_travis/molecule/common/inventory.yml -e "ansible_python_interpreter=/home/travis/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/python travis_virtualenv=python${TRAVIS_PYTHON_VERSION} github_repository=ingest"
 - |
   pushd tests/test_data
   for x in good bad-project bad-mimetype bad-hashsum ; do
@@ -85,40 +76,19 @@ env:
   cp metadata-files/bad-json-md.notjson metadata.txt
   tar -cf bad-json.tar metadata.txt data
   popd
-- |
-  MAX_TRIES=60
-  HTTP_CODE=$(curl -sL -w "%{http_code}\\n" localhost:8121/keys -o /dev/null || true)
-  while [[ $HTTP_CODE != 200 && $MAX_TRIES > 0 ]] ; do
-    sleep 1
-    HTTP_CODE=$(curl -sL -w "%{http_code}\\n" localhost:8121/keys -o /dev/null || true)
-    MAX_TRIES=$(( MAX_TRIES - 1 ))
-  done
-- |
-  TOP_DIR=$PWD
-  MD_TEMP=$(mktemp -d)
-  VERSION=$(pip show pacifica-metadata | grep Version: | awk '{ print $2 }')
-  git clone https://github.com/pacifica/pacifica-metadata.git ${MD_TEMP}
-  pushd ${MD_TEMP}
-  git checkout v${VERSION}
-  python tests/test_files/loadit_test.py
-  python tests/cherrypy_catch_test.py & echo $! > $TOP_DIR/travis/cherrypy-catch.pid
-  popd
-- pacifica-policy & echo $! > policy.pid
 - curl 'localhost:8051/getid?range=1000&mode=file'
 jobs:
   include:
   - stage: lint
     python: 3.6
     script: pre-commit run -a
+    before_script: skip
   - python: 2.7
     script: pre-commit run -a
+    before_script: skip
   - stage: test
-    script: *1
-    before_script: *2
     python: 3.6
-  - script: *1
-    before_script: *2
-    python: 2.7
+  - python: 2.7
   - stage: test-docker
     sudo: required
     python: 3.6
@@ -152,6 +122,7 @@ jobs:
     services: []
     language: python
     before_install: skip
+    before_script: skip
     script: skip
     python: 3.6
     deploy:
@@ -166,6 +137,7 @@ jobs:
   - services: []
     language: python
     before_install: skip
+    before_script: skip
     script: skip
     python: 2.7
     deploy:
@@ -179,5 +151,4 @@ jobs:
         tags: true
 install:
 - pip install -r requirements-dev.txt
-- pip install uwsgi
 - pip freeze
