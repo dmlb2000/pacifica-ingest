@@ -70,5 +70,5 @@ def test_big_move():
             )
             assert req.status_code == 200
             job_id = req.json()['job_id']
-            job_state = check_upload_state(job_id, 10)
+            job_state = check_upload_state(job_id, 12)
             try_assert_job_state(job_state, 'OK', 'ingest metadata', 100)

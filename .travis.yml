@@ -58,7 +58,7 @@ script:
   kill $(cat ../metadata.pid) || true
   kill $(cat ../uniqueid.pid) || true
   kill $(cat ../travis/cherrypy-catch.pid) || true
-  wait
+  wait ${SERVER_PID}
   $RUN_CMD -p -m pytest -v entry_points_test.py
   set +x
 - coverage combine .coverage*
