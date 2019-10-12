@@ -1,5 +1,6 @@
 celery
 cherrypy
+pacifica-namespace
 peewee>2
 requests
 setuptools

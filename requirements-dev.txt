@@ -6,9 +6,12 @@ pacifica-archiveinterface
 pacifica-metadata>=0.7.0
 pacifica-policy>=0.4.0
 pacifica-uniqueid
+pbs
 pep257
 pre-commit
+psycopg2
 pylint<2.0
 pytest
 radon
 recommonmark
+redis

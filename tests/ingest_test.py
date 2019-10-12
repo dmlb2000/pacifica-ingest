@@ -13,7 +13,7 @@ from pacifica.ingest.tarutils import MetaParser
 from pacifica.ingest.tarutils import TarIngester
 from pacifica.ingest.tarutils import FileIngester
 from pacifica.ingest.tasks import ingest
-from ingest_db_setup_test import IngestDBSetup
+from .ingest_db_setup_test import IngestDBSetup
 
 
 class IngestServerUnitTests(IngestDBSetup):

@@ -3,7 +3,7 @@
 """Test ingest with good uploads of good and bad data."""
 from __future__ import print_function, absolute_import
 import requests
-from common_methods_test import try_good_upload
+from .common_methods_test import try_good_upload
 
 
 def test_bad_job_id():

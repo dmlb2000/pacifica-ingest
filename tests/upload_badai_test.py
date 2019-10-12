@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test ingest with a disabled archive interface."""
 from __future__ import print_function, absolute_import
-from common_methods_test import try_good_upload, try_good_move
+from .common_methods_test import try_good_upload, try_good_move
 
 
 # this is a long name but descriptive.

@@ -20,11 +20,11 @@ def stop_later(doit=False):
 
     def sleep_then_exit():
         """
-        Sleep for 90 seconds then call cherrypy exit.
+        Sleep for 10 seconds then call cherrypy exit.
 
-        Hopefully this is long enough for the end-to-end tests to finish
+        This is long enough for CherryPy to startup.
         """
-        sleep(120)
+        sleep(10)
         cherrypy.engine.exit()
     sleep_thread = Thread(target=sleep_then_exit)
     sleep_thread.daemon = True
@@ -34,7 +34,7 @@ def stop_later(doit=False):
 def main(argv=None):
     """Main method to start the httpd server."""
     parser = ArgumentParser(description='Run the cart server.')
-    parser.add_argument('--cp-config', metavar='CPCONFIG', type=str,
+    parser.add_argument('--cpconfig', metavar='CPCONFIG', type=str,
                         default=CHERRYPY_CONFIG, dest='cpconfig',
                         help='cherrypy config file')
     parser.add_argument('-c', '--config', metavar='CONFIG', type=str,
@@ -122,7 +122,7 @@ def dbsync(args):
     """Create/Update the database schema to current code."""
     os.environ['INGEST_CONFIG'] = args.config
     OrmSync.dbconn_blocking()
-    return OrmSync.update_tables()
+    return bool2cmdint(OrmSync.update_tables())
 
 
 def dbchk(args):

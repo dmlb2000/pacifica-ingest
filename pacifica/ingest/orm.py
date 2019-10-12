@@ -94,7 +94,7 @@ class OrmSync(object):
         db_ver = IngestStateSystem.get_version()
         if verlist.index(verlist[-1]) == verlist.index(db_ver):
             # we have the current version don't update
-            return
+            return True
         with IngestState.atomic():
             for db_ver in verlist[verlist.index(db_ver):-1]:
                 next_db_ver = verlist[verlist.index(db_ver)+1]
@@ -106,6 +106,7 @@ class OrmSync(object):
             IngestStateSystem.drop_table()
             IngestStateSystem.create_table()
             IngestStateSystem.get_or_create_version()
+        return True
 
 
 # pylint: disable=too-few-public-methods
