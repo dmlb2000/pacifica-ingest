@@ -13,17 +13,21 @@ except ImportError:  # pragma: no cover
     from backports.tempfile import TemporaryDirectory
 from six import ensure_binary
 import requests
+from cherrypy.test import helper
+from .ingest_db_setup_test import IngestCPSetup
 from .common_methods_test import try_good_move, check_upload_state, try_assert_job_state
 
 
-def test_good_move():
-    """Test the good move."""
-    try_good_move('move-md', 'OK', 'ingest metadata', 100)
+class TestMoveIngest(IngestCPSetup, helper.CPWebCase):
+    """Test the move ingest api."""
 
+    def test_good_move(self):
+        """Test the good move."""
+        try_good_move(self, 'move-md', 'OK', 'ingest metadata', 100)
 
-def test_bad_file_move():
-    """Test the bad file path move."""
-    try_good_move('bad-move-md', 'FAILED', 'move files', 0)
+    def test_bad_file_move(self):
+        """Test the bad file path move."""
+        try_good_move(self, 'bad-move-md', 'FAILED', 'move files', 0)
 
 
 @contextmanager
@@ -55,24 +59,30 @@ def create_temp_files(temp_dir, num_files=100):
     yield file_list
 
 
-def test_big_move():
-    """Test should create a large move and verify speed."""
-    move_md_path = (
-        os.path.realpath(os.path.dirname(__file__)),
-        'test_data', 'move-md.json'
-    )
-    with open(os.path.join(*move_md_path), 'r') as md_fd:
-        md_data = json.loads(md_fd.read())
-        md_data.pop()
-    with TemporaryDirectory() as temp_dir:
-        with create_temp_files(temp_dir) as file_list:
-            md_data.extend(file_list)
-            req = requests.post(
-                'http://127.0.0.1:8066/move',
-                json=md_data,
-                headers={'content-type': 'application/json'}
-            )
-            assert req.status_code == 200
-            job_id = req.json()['job_id']
-            job_state = check_upload_state(job_id, 12)
-            try_assert_job_state(job_state, 'OK', 'ingest metadata', 100)
+class TestBigMoveIngest(IngestCPSetup, helper.CPWebCase):
+    """Test the move ingest api."""
+
+    def test_big_move(self):
+        """Test should create a large move and verify speed."""
+        move_md_path = (
+            os.path.realpath(os.path.dirname(__file__)),
+            'test_data', 'move-md.json'
+        )
+        with open(os.path.join(*move_md_path), 'r') as md_fd:
+            md_data = json.loads(md_fd.read())
+            md_data.pop()
+        with TemporaryDirectory() as temp_dir:
+            with create_temp_files(temp_dir) as file_list:
+                md_data.extend(file_list)
+                req = requests.post(
+                    'http://127.0.0.1:8066/move',
+                    json=md_data,
+                    headers={'content-type': 'application/json'}
+                )
+                self.assertEqual(
+                    req.status_code, 200,
+                    'Return status from API should be 200'
+                )
+                job_id = req.json()['job_id']
+                job_state = check_upload_state(job_id, 12)
+                try_assert_job_state(job_state, 'OK', 'ingest metadata', 100)

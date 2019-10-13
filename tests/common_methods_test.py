@@ -24,7 +24,8 @@ def try_assert_job_state(job_state, state, task, percent):
     assert int(float(job_state['task_percent'])) == percent
 
 
-def try_good_move(mdfile, state, task, percent, wait=5):
+# pylint: disable=too-many-arguments
+def try_good_move(cls, mdfile, state, task, percent, wait=5):
     """Test the move and see if the state task and percent match."""
     md_file_path = (
         dirname(realpath(__file__)),
@@ -36,7 +37,7 @@ def try_good_move(mdfile, state, task, percent, wait=5):
             data=filefd.read(),
             headers={'content-type': 'application/json'}
         )
-        assert req.status_code == 200
+        cls.assertEqual(req.status_code, 200)
         job_id = req.json()['job_id']
         job_state = check_upload_state(job_id, wait)
         try_assert_job_state(job_state, state, task, percent)
