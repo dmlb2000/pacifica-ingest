@@ -17,10 +17,13 @@ class IngestDBSetup(TestCase):
             model.bind(self._db, bind_refs=False, bind_backrefs=False)
         self._db.connect()
         self._db.create_tables([IngestState, IngestStateSystem])
+        IngestStateSystem.get_or_create_version()
 
     def tearDown(self):
         """Tear down the database."""
         self._db.drop_tables([IngestState, IngestStateSystem])
         self._db.close()
         self._db = None
+        for model in [IngestState, IngestStateSystem]:
+            model.bind()
     # pylint: enable=invalid-name
