@@ -3,7 +3,7 @@
 """Test cart database setup class."""
 from unittest import TestCase
 from peewee import SqliteDatabase
-from pacifica.ingest.orm import IngestState, IngestStateSystem
+from pacifica.ingest.orm import IngestState, IngestStateSystem, DB
 
 
 class IngestDBSetup(TestCase):
@@ -24,6 +24,5 @@ class IngestDBSetup(TestCase):
         self._db.drop_tables([IngestState, IngestStateSystem])
         self._db.close()
         self._db = None
-        for model in [IngestState, IngestStateSystem]:
-            model.bind()
+        DB.bind([IngestState, IngestStateSystem])
     # pylint: enable=invalid-name
