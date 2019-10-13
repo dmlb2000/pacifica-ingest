@@ -23,6 +23,9 @@ class TestMoveIngest(IngestCPSetup, helper.CPWebCase):
 
     def test_good_move(self):
         """Test the good move."""
+        tmp_path = '{}{}'.format(os.sep, os.path.join('tmp', 'foo.txt'))
+        with open(tmp_path, 'w') as tmpfd:
+            tmpfd.write('foo\n')
         try_good_move(self, 'move-md', 'OK', 'ingest metadata', 100)
 
     def test_bad_file_move(self):
