@@ -57,7 +57,11 @@ def create_temp_files(temp_dir, num_files=100):
 
 def test_big_move():
     """Test should create a large move and verify speed."""
-    with open(os.path.join('test_data', 'move-md.json'), 'r') as md_fd:
+    move_md_path = (
+        os.path.realpath(os.path.dirname(__file__)),
+        'test_data', 'move-md.json'
+    )
+    with open(os.path.join(*move_md_path), 'r') as md_fd:
         md_data = json.loads(md_fd.read())
         md_data.pop()
     with TemporaryDirectory() as temp_dir:
