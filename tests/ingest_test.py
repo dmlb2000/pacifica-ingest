@@ -19,6 +19,8 @@ from .ingest_db_setup_test import IngestDBSetup
 class IngestServerUnitTests(IngestDBSetup):
     """Ingest server unit and integration tests."""
 
+    test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_data')
+
     def test_file_ingester(self):
         """Test the FileIngester class."""
         FileIngester('sha1', 'fakehashsum', '1')
@@ -31,8 +33,7 @@ class IngestServerUnitTests(IngestDBSetup):
 
     def test_load_meta(self):
         """Test sucking metadata from uploader and configuring it in a dictionary suitable to blob to meta ingest."""
-        tar = open_tar('test_data/good.tar')
-
+        tar = open_tar(os.path.join(self.test_dir, 'good.tar'))
         meta = MetaParser()
         meta.load_meta(tar, 1)
         self.assertTrue(meta)
@@ -41,18 +42,18 @@ class IngestServerUnitTests(IngestDBSetup):
         """Test the ingest task."""
         job_id = get_unique_id(1, 'upload_job')
 
-        ingest(job_id, 'test_data/good.tar')
+        ingest(job_id, os.path.join(self.test_dir, 'good.tar'))
         self.assertTrue(job_id)
 
     def test_post_metadata(self):
         """Test sucking metadata from uploader and configuring it in a dictionary suitable to blob to meta ingest."""
-        tar = open_tar('test_data/good.tar')
+        tar = open_tar(os.path.join(self.test_dir, 'good.tar'))
         meta = MetaParser()
         meta.load_meta(tar, 1)
         success, exception = meta.post_metadata()
         self.assertTrue(success)
         self.assertFalse(exception)
-        tar = open_tar('test_data/bad-mimetype.tar')
+        tar = open_tar(os.path.join(self.test_dir, 'bad-mimetype.tar'))
         meta = MetaParser()
         meta.load_meta(tar, 2)
         success, exception = meta.post_metadata()
@@ -61,7 +62,7 @@ class IngestServerUnitTests(IngestDBSetup):
 
     def test_down_metadata(self):
         """Test a failed upload of the metadata."""
-        tar = open_tar('test_data/good.tar')
+        tar = open_tar(os.path.join(self.test_dir, 'good.tar'))
         meta = MetaParser()
 
         def bad_put(*args, **kwargs):  # pylint: disable=unused-argument
@@ -75,7 +76,7 @@ class IngestServerUnitTests(IngestDBSetup):
 
     def test_ingest_tar(self):
         """Test moving individual files to the archive files are validated inline with the upload."""
-        tar = open_tar('test_data/good.tar')
+        tar = open_tar(os.path.join(self.test_dir, 'good.tar'))
         meta = MetaParser()
         meta.load_meta(tar, 1)
 
