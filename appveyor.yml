@@ -71,6 +71,8 @@ before_test:
     python tests\test_files\loadit_test.py;
     Start-Process C:\pacifica\Scripts\python.exe -ArgumentList "tests\cherrypy_catch_test.py" -RedirectStandardError catch-error.log -RedirectStandardOutput catch-output.log;
     popd;
+    Start-Process C:\pacifica\Scripts\pacifica-archiveinterface.exe -ArgumentList "--prefix C:\archive" -RedirectStandardOutput archive-output.log -RedirectStandardError archive-error.log;
+    Start-Process C:\pacifica\Scripts\pacifica-policy.exe -RedirectStandardOutput policy-output.log -RedirectStandardError policy-error.log;
     Invoke-WebRequest 'http://localhost:8051/getid?range=1000&mode=file';
 
 
