@@ -107,6 +107,7 @@ test_script:
     pre-commit run -a;
     $env:INGEST_CPCONFIG = "$PWD/server.conf";
     $env:INGEST_CONFIG = "$PWD/travis/apconfig.ini";
+    pip install .;
     coverage run --include="*/site-packages/pacifica/ingest/*" -m pytest -xsv tests;
     ls .coverage* | %{ coverage combine -a $_.name };
     coverage report -m --fail-under=100;
