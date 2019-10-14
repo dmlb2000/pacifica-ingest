@@ -6,27 +6,10 @@ import os
 from unittest import TestCase
 from tempfile import mkdtemp
 from shutil import rmtree
-try:
-    import sh
-except ImportError:
-    import pbs
-
-    class Sh(object):
-        """Sh style wrapper."""
-
-        def __getattr__(self, attr):
-            """Return command object like sh."""
-            return pbs.Command(attr)
-
-        # pylint: disable=invalid-name
-        @staticmethod
-        def Command(attr):
-            """Return command object like sh."""
-            return pbs.Command(attr)
-    sh = Sh()
 import peewee
 from pacifica.ingest.__main__ import cmd, main
 from pacifica.ingest.orm import DB, IngestState, IngestStateSystem
+from .shwrapper_test import sh
 
 
 class TestAdminCmdBase(TestCase):

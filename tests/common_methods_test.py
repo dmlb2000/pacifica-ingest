@@ -43,13 +43,13 @@ def try_good_move(cls, mdfile, state, task, percent, wait=5):
         try_assert_job_state(job_state, state, task, percent)
 
 
-def try_good_upload(tarfile, state, task, percent, wait=5):
+def try_good_upload(cls, tarfile, state, task, percent, wait=5):
     """Test the upload and see if the state task and percent match."""
     tar_file_path = (
         dirname(realpath(__file__)),
         'test_data', '{}.tar'.format(tarfile)
     )
-    with open(join(tar_file_path), 'rb') as filefd:
+    with open(join(*tar_file_path), 'rb') as filefd:
         req = requests.post(
             'http://127.0.0.1:8066/upload',
             data=filefd,
@@ -57,6 +57,6 @@ def try_good_upload(tarfile, state, task, percent, wait=5):
                 'Content-Type': 'application/octet-stream'
             }
         )
-        assert req.status_code == 200
+        cls.assertEqual(req.status_code, 200)
         job_state = check_upload_state(loads(req.text)['job_id'], wait)
         try_assert_job_state(job_state, state, task, percent)

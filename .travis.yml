@@ -12,22 +12,14 @@ env:
   PEEWEE_URL: postgres://postgres:@localhost:5432/pacifica_ingest
 script:
 - pip install .
-- coverage run --include='*/site-packages/pacifica/ingest/*' -m pytest -sxv tests
+- coverage run --include='*/site-packages/pacifica/ingest/*' --include='pacifica/ingest/*' -m pytest -sxv tests
 - coverage combine .coverage*
 - coverage report -m --fail-under 100
 before_script:
 - pip install ansible
 - ansible-galaxy install pacifica.ansible_pacifica pacifica.ansible_travis
 - ansible-playbook ~/.ansible/roles/pacifica.ansible_travis/molecule/common/playbook.yml -i ~/.ansible/roles/pacifica.ansible_travis/molecule/common/inventory.yml -e "ansible_python_interpreter=/home/travis/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/python travis_virtualenv=python${TRAVIS_PYTHON_VERSION} github_repository=ingest"
-- |
-  pushd tests/test_data
-  for x in good bad-project bad-mimetype bad-hashsum ; do
-    cp metadata-files/${x}-md.json metadata.txt
-    tar -cf ${x}.tar metadata.txt data
-  done
-  cp metadata-files/bad-json-md.notjson metadata.txt
-  tar -cf bad-json.tar metadata.txt data
-  popd
+- ./tests/build-tars.sh
 - curl 'localhost:8051/getid?range=1000&mode=file'
 jobs:
   include:

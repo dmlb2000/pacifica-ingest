@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test cart database setup class."""
 import os
+from time import sleep
 from unittest import TestCase
 import threading
 import cherrypy
@@ -44,6 +45,7 @@ class IngestCPSetup(object):
 
         self.celery_thread = threading.Thread(target=run_celery_worker)
         self.celery_thread.start()
+        sleep(3)
 
     # pylint: disable=invalid-name
     def tearDown(self):

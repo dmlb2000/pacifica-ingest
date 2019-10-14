@@ -50,18 +50,7 @@ before_test:
     pacifica-uniqueid-cmd dbsync;
     Start-Process C:\pacifica\Scripts\pacifica-metadata.exe -RedirectStandardError metadata-error.log -RedirectStandardOutput metadata-output.log;
     Start-Process C:\pacifica\Scripts\pacifica-uniqueid.exe -RedirectStandardError uniqueid-error.log -RedirectStandardOutput uniqueid-output.log;
-    pushd tests/test_data;
-    cp metadata-files/good-md.json metadata.txt;
-    tar -cf good.tar metadata.txt data;
-    cp metadata-files/bad-project-md.json metadata.txt;
-    tar -cf bad-project.tar metadata.txt data;
-    cp metadata-files/bad-mimetype-md.json metadata.txt;
-    tar -cf bad-mimetype.tar metadata.txt data;
-    cp metadata-files/bad-hashsum-md.json metadata.txt;
-    tar -cf bad-hashsum.tar metadata.txt data;
-    cp metadata-files/bad-json-md.notjson metadata.txt;
-    tar -cf bad-json.tar metadata.txt data;
-    popd;
+    bash tests/build-tars.sh;
     ls tests/test_data;
     $MD_VERSION = `pip show pacifica-metadata | grep Version: | awk '{ print $2 }';
     Invoke-WebRequest https://github.com/pacifica/pacifica-metadata/archive/v${MD_VERSION}.zip -OutFile pacifica-metadata.zip;
@@ -78,6 +67,7 @@ before_test:
 
 test_script:
 - ps: >
+    $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8';
     $env:POLICY_CPCONFIG = "$PWD/travis/policy/server.conf";
     $env:ARCHIVEINTERFACE_CPCONFIG = "$PWD/travis/archivei/server.conf";
     $env:METADATA_URL = "http://127.0.0.1:8121";
