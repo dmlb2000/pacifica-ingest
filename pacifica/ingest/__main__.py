@@ -49,6 +49,8 @@ def main(argv=None):
     parser.add_argument('--stop-after-a-moment', help=SUPPRESS,
                         default=False, dest='stop_later',
                         action='store_true')
+    if not argv:
+        argv = sys_argv
     args = parser.parse_args(argv)
     OrmSync.dbconn_blocking()
     if not IngestStateSystem.is_safe():
@@ -132,7 +134,3 @@ def dbchk(args):
     if args.check_equal:
         return bool2cmdint(IngestStateSystem.is_equal())
     return bool2cmdint(IngestStateSystem.is_safe())
-
-
-if __name__ == '__main__':
-    main(sys_argv[1:])

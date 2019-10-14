@@ -60,6 +60,11 @@ class TestAdminCmd(TestAdminCmdBase):
 class TestAdminCmdSync(TestAdminCmdBase):
     """Test the database upgrade scripting."""
 
+    def test_updatedb(self):
+        """Test that dbchk doesn't work."""
+        DB.drop_tables([IngestState, IngestStateSystem])
+        self.assertEqual(cmd(['dbsync']), 0)
+
     def test_main(self):
         """Test that dbchk doesn't work."""
         self.assertEqual(cmd(['dbsync']), 0)

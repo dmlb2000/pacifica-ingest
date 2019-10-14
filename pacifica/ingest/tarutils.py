@@ -250,7 +250,6 @@ class TarIngester(object):
             path = '/'.join(['data', get_clipped(path)])
             uni_path = path.encode('utf-8') if PY2 else path
             info = self.tar.getmember(uni_path)
-            print(info.name)
             ingest = FileIngester(file_hash_type, file_hash, file_id)
             ingest.upload_file_in_file(info, self.tar)
 # pylint: enable=too-few-public-methods
