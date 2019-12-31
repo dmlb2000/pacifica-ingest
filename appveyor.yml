@@ -15,7 +15,6 @@ environment:
   ARCHIVEINTERFACE_URL: http://127.0.0.1:9080
   BROKER_URL: redis://127.0.0.1:6379/0
   matrix:
-  - PYTHON: C:\Python27-x64
   - PYTHON: C:\Python36-x64
 
 install:

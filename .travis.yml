@@ -1,8 +1,6 @@
 language: python
 dist: bionic
-services:
-- postgresql
-- redis-server
+python: 3.6
 stages:
 - lint
 - test
@@ -78,16 +76,11 @@ before_script:
 jobs:
   include:
   - stage: lint
-    python: 3.6
-    script: pre-commit run -a
-  - python: 2.7
+    before_script: skip
     script: pre-commit run -a
   - stage: test
-    python: 3.6
-  - python: 2.7
   - stage: test-docker
     sudo: required
-    python: 3.6
     before_script: skip
     services:
     - docker
@@ -120,26 +113,11 @@ jobs:
     language: python
     before_install: skip
     script: skip
-    python: 3.6
     deploy:
       skip_cleanup: true
       provider: pypi
       user: dmlb2000
       distributions: sdist bdist_wheel
-      password:
-        secure: dspmJGqWBVYbNImug5s7gchNfp2B9frCHGEpkfZth78FTzK00f6X8JjYqy7gwychiOD/NFD6WhZSy7vqv2vzDXbk8pJrcJ6gwd+2ZGcoqdp6v3RwYq6ntsJhtDvmWD6oIs8hx+JzAcYOBKfzHg3wDZegM+VfDJfGA+xqy/fHeBSORh1WSaIDOq2u/Gnufg6HOIZxd47VzKeTMgJcrF1Qoa9P2nTpxGBDrKBOFodvTay6qQso2F8JMHtpqHabfvq7FjvOCarjLPlwWTfFFEIP87rDcCAK4YKUjyU8hGedekhLOMSabbTQpcHMYFK1rMpCPuzIMYFe/GApgdY6PpHnDWv/t2zHg6BhAtpT7qhnOG8GK0jA7uHsiOYEjaOUIYhEZvS301B1fqSy1jsm55tmbekQF0AIyQLn8EhbVFSMxXxtn/DDBkswDgayMSdNaPZtQsQMba4tDt8GqPrloBfmaXfGyXcrLD9zYiDR7Nn4EVIoV0nsK04GPUT9gB7a5I6LskI6D2ri3/3a18rAfrJBltnkvPzLS3rRbmj5v01kChmQ4md45Xr15OKg4j9gLzOTMFgpcHIMsl1Od3gE64Pb7X5/x8fB957qwtx+NnEZ+VcWPgzvU+3Op8laHh3mUHfbq/GmVo4fD162dnDRuNjEp4Tgom10Yu+l/tGkw67H2Io=
-      on:
-        tags: true
-  - services: []
-    language: python
-    before_install: skip
-    script: skip
-    python: 2.7
-    deploy:
-      skip_cleanup: true
-      provider: pypi
-      user: dmlb2000
-      distributions: bdist_wheel
       password:
         secure: dspmJGqWBVYbNImug5s7gchNfp2B9frCHGEpkfZth78FTzK00f6X8JjYqy7gwychiOD/NFD6WhZSy7vqv2vzDXbk8pJrcJ6gwd+2ZGcoqdp6v3RwYq6ntsJhtDvmWD6oIs8hx+JzAcYOBKfzHg3wDZegM+VfDJfGA+xqy/fHeBSORh1WSaIDOq2u/Gnufg6HOIZxd47VzKeTMgJcrF1Qoa9P2nTpxGBDrKBOFodvTay6qQso2F8JMHtpqHabfvq7FjvOCarjLPlwWTfFFEIP87rDcCAK4YKUjyU8hGedekhLOMSabbTQpcHMYFK1rMpCPuzIMYFe/GApgdY6PpHnDWv/t2zHg6BhAtpT7qhnOG8GK0jA7uHsiOYEjaOUIYhEZvS301B1fqSy1jsm55tmbekQF0AIyQLn8EhbVFSMxXxtn/DDBkswDgayMSdNaPZtQsQMba4tDt8GqPrloBfmaXfGyXcrLD9zYiDR7Nn4EVIoV0nsK04GPUT9gB7a5I6LskI6D2ri3/3a18rAfrJBltnkvPzLS3rRbmj5v01kChmQ4md45Xr15OKg4j9gLzOTMFgpcHIMsl1Od3gE64Pb7X5/x8fB957qwtx+NnEZ+VcWPgzvU+3Op8laHh3mUHfbq/GmVo4fD162dnDRuNjEp4Tgom10Yu+l/tGkw67H2Io=
       on:

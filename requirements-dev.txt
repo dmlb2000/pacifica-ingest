@@ -1,6 +1,6 @@
 -r requirements.txt
 backports.tempfile
-coverage
+coverage<5
 mock
 pacifica-archiveinterface
 pacifica-metadata>=0.7.0
