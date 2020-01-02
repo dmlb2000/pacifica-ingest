@@ -21,8 +21,6 @@ INGEST_APP = Celery(
 class IngestException(Exception):
     """Ingest class exception."""
 
-    pass
-
 
 def ingest_check_tarfile(job_id, filepath):
     """Check the ingest tarfile and return state or set it properly."""

@@ -25,7 +25,7 @@ def error_page_default(**kwargs):
 
 
 # pylint: disable=too-few-public-methods
-class RestIngestState(object):
+class RestIngestState:
     """The CherryPy ingest state object."""
 
     exposed = True
@@ -45,7 +45,7 @@ class RestIngestState(object):
     # pylint: enable=invalid-name
 
 
-class RestMove(object):
+class RestMove:
     """Ingest the data from the service."""
 
     exposed = True
@@ -71,7 +71,7 @@ class RestMove(object):
     # pylint: enable=invalid-name
 
 
-class RestUpload(object):
+class RestUpload:
     """Ingest the data from the service."""
 
     exposed = True
@@ -97,7 +97,7 @@ class RestUpload(object):
     # pylint: enable=invalid-name
 
 
-class Root(object):
+class Root:
     """The CherryPy root object."""
 
     exposed = True

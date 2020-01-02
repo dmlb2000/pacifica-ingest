@@ -8,7 +8,7 @@ pacifica-policy>=0.4.0
 pacifica-uniqueid
 pep257
 pre-commit
-pylint<2.0
+pylint>2
 pytest
 radon
 recommonmark

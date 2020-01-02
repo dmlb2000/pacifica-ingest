@@ -15,10 +15,8 @@ from .config import get_config
 class HashValidationException(Exception):
     """Class to capture hashsum validation failures."""
 
-    pass
 
-
-class FileIngester(object):
+class FileIngester:
     """Class to ingest a single file from a tar file into the file archives."""
 
     fileobj = None
@@ -91,7 +89,7 @@ class FileIngester(object):
         return True
 
 
-class MetaParser(object):
+class MetaParser:
     """Class used to hold and search metadata."""
 
     # entire metadata
@@ -228,7 +226,7 @@ def get_clipped(fname):
 
 
 # pylint: disable=too-few-public-methods
-class TarIngester(object):
+class TarIngester:
     """Class to read a tar file and upload it to the metadata and file archives."""
 
     tar = None
