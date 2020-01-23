@@ -16,6 +16,8 @@ environment:
   BROKER_URL: redis://127.0.0.1:6379/0
   matrix:
   - PYTHON: C:\Python36-x64
+  - PYTHON: C:\Python37-x64
+  - PYTHON: C:\Python38-x64
 
 install:
 - ps: >

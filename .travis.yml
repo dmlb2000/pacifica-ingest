@@ -78,8 +78,17 @@ jobs:
   - stage: lint
     before_script: skip
     script: pre-commit run -a
+  - python: 3.7
+    before_script: skip
+    script: pre-commit run -a
+  - python: 3.8
+    before_script: skip
+    script: pre-commit run -a
   - stage: test
+  - python: 3.7
+  - python: 3.8
   - stage: test-docker
+    python: 3.8
     sudo: required
     before_script: skip
     services:
@@ -111,6 +120,7 @@ jobs:
   - stage: deploy
     services: []
     language: python
+    python: 3.8
     before_install: skip
     script: skip
     deploy:
