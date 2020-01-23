@@ -7,13 +7,10 @@ import json
 import hashlib
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-try:
-    from tempfile import TemporaryDirectory
-except ImportError:  # pragma: no cover
-    from backports.tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory
 from six import ensure_binary
 import requests
-from common_methods_test import try_good_move, check_upload_state, try_assert_job_state
+from .common_methods_test import try_good_move, check_upload_state, try_assert_job_state
 
 
 def test_good_move():

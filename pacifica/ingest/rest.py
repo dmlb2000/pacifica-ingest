@@ -4,7 +4,6 @@
 import os
 import shutil
 import json
-from six import PY2
 import peewee
 import cherrypy
 from .orm import read_state, update_state
@@ -22,6 +21,26 @@ def error_page_default(**kwargs):
         'traceback': kwargs['traceback'],
         'version': kwargs['version']
     })
+
+
+def get_remote_user():
+    """Get the remote user from cherrypy request headers."""
+    return cherrypy.request.headers.get(
+        get_config().get('ingest', 'auth_header'),
+        get_config().get('ingest', 'default_user')
+    )
+
+
+def get_authed_user(func):
+    """Decorator to pull out authed user."""
+    def wrapper(*args, **kwargs):
+        """Wrapper method."""
+        return func(
+            *args,
+            authed_user=get_remote_user(),
+            **kwargs
+        )
+    return wrapper
 
 
 # pylint: disable=too-few-public-methods
@@ -55,18 +74,18 @@ class RestMove:
     @staticmethod
     @cherrypy.tools.json_out()
     @cherrypy.tools.json_in()
-    def POST():
+    @get_authed_user
+    def POST(authed_user):
         """Post the uploaded data."""
         job_id = get_unique_id(1, 'upload_job')
         update_state(job_id, 'OK', 'UPLOADING', 0)
-        root = get_config().get('ingest', 'volume_path')
-        name = str(job_id) + '.json'
-        name = os.path.join(root, name)
+        name = os.path.join(
+            get_config().get('ingest', 'volume_path'),
+            '{}.json'.format(job_id)
+        )
         with open(name, 'wb') as ingest_fd:
-            uni_str = json.dumps(cherrypy.request.json)
-            bytes_str = uni_str if PY2 else bytes(uni_str, 'utf8')
-            ingest_fd.write(bytes_str)
-        move.delay(job_id, name)
+            ingest_fd.write(json.dumps(cherrypy.request.json).encode())
+        move.delay(job_id, name, authed_user)
         return create_state_response(read_state(job_id))
     # pylint: enable=invalid-name
 
@@ -80,19 +99,21 @@ class RestUpload:
     # pylint: disable=invalid-name
     @staticmethod
     @cherrypy.tools.json_out()
-    def POST():
+    @get_authed_user
+    def POST(authed_user):
         """Post the uploaded data."""
         job_id = get_unique_id(1, 'upload_job')
         update_state(job_id, 'OK', 'UPLOADING', 0)
-        root = get_config().get('ingest', 'volume_path')
-        name = str(job_id) + '.tar'
-        name = os.path.join(root, name)
+        name = os.path.join(
+            get_config().get('ingest', 'volume_path'),
+            '{}.tar'.format(job_id)
+        )
         with open(name, 'wb') as ingest_fd:
             shutil.copyfileobj(
                 cherrypy.request.body, ingest_fd,
                 parse_size(get_config().get('ingest', 'transfer_size'))
             )
-        ingest.delay(job_id, name)
+        ingest.delay(job_id, name, authed_user)
         return create_state_response(read_state(job_id))
     # pylint: enable=invalid-name
 

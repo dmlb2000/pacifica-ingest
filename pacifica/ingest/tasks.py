@@ -57,9 +57,9 @@ def ingest_metadata_parser(job_id, tar):
     return meta
 
 
-def ingest_policy_check(job_id, meta_str):
+def ingest_policy_check(job_id, meta_str, authed_user):
     """Ingest check to validate metadata at policy."""
-    success, exception = validate_meta(meta_str)
+    success, exception = validate_meta(meta_str, authed_user)
     if not success:
         update_state(job_id, 'FAILED', 'Policy Validation', 0, exception)
         raise IngestException()
@@ -108,11 +108,11 @@ def ingest_metadata(job_id, meta):
 
 
 @INGEST_APP.task(ignore_result=False)
-def move(job_id, filepath):
+def move(job_id, filepath, authed_user):
     """Move a MD bundle into the archive."""
     try:
         meta = move_metadata_parser(job_id, filepath)
-        ingest_policy_check(job_id, meta.meta_str)
+        ingest_policy_check(job_id, meta.meta_str, authed_user)
         move_files(job_id, meta)
         ingest_metadata(job_id, meta)
         os.unlink(filepath)
@@ -121,13 +121,13 @@ def move(job_id, filepath):
 
 
 @INGEST_APP.task(ignore_result=False)
-def ingest(job_id, filepath):
+def ingest(job_id, filepath, authed_user):
     """Ingest a tar bundle into the archive."""
     try:
         tar = ingest_check_tarfile(job_id, filepath)
         meta = ingest_metadata_parser(job_id, tar)
         ingest_obj = TarIngester(tar, meta)
-        ingest_policy_check(job_id, meta.meta_str)
+        ingest_policy_check(job_id, meta.meta_str, authed_user)
         ingest_files(job_id, ingest_obj)
         ingest_metadata(job_id, meta)
         tar.close()
@@ -136,11 +136,14 @@ def ingest(job_id, filepath):
         return
 
 
-def validate_meta(meta_str):
+def validate_meta(meta_str, authed_user):
     """Validate metadata."""
     try:
         ingest_policy_url = get_config().get('policy', 'ingest_url')
-        headers = {'content-type': 'application/json'}
+        headers = {
+            'content-type': 'application/json',
+            get_config().get('ingest', 'auth_header'): authed_user
+        }
         session = requests.session()
         retry_adapter = requests.adapters.HTTPAdapter(max_retries=5)
         session.mount('http://', retry_adapter)

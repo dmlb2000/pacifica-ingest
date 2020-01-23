@@ -1,5 +1,4 @@
 -r requirements.txt
-backports.tempfile
 coverage<5
 mock
 pacifica-archiveinterface

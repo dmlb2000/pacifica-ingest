@@ -6,7 +6,6 @@ import tarfile
 import json
 import hashlib
 import time
-from six import PY2
 import requests
 from .utils import get_unique_id
 from .config import get_config
@@ -141,9 +140,7 @@ class MetaParser:
         # transaction id is the unique upload job id created by the ingest frontend
         self.transaction_id = job_id
 
-        string = tar.extractfile('metadata.txt').read()
-        uni_str = string if PY2 else string.decode('utf8')
-        meta_list = json.loads(uni_str)
+        meta_list = json.loads(tar.extractfile('metadata.txt').read())
 
         # get the start index for the file
         self.file_count = file_count(tar)
@@ -245,9 +242,7 @@ class TarIngester:
 
             path = self.meta.get_subdir(file_id) + '/' + name
             # this is for posix tar standard
-            path = '/'.join(['data', get_clipped(path)])
-            uni_path = path.encode('utf-8') if PY2 else path
-            info = self.tar.getmember(uni_path)
+            info = self.tar.getmember('/'.join(['data', get_clipped(path)]))
             print(info.name)
             ingest = FileIngester(file_hash_type, file_hash, file_id)
             ingest.upload_file_in_file(info, self.tar)

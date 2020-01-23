@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 """Configuration reading and validation module."""
 from os import getenv
-try:
-    from ConfigParser import SafeConfigParser
-except ImportError:  # pragma: no cover python 2 vs 3 issue
-    from configparser import ConfigParser as SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 from pacifica.ingest.globals import CONFIG_FILE
 
 
@@ -13,6 +10,10 @@ def get_config():
     """Return the ConfigParser object with defaults set."""
     configparser = SafeConfigParser()
     configparser.add_section('ingest')
+    configparser.set('ingest', 'auth_header', getenv(
+        'INGEST_AUTH_HEADER', 'X-Http-Authed-User'))
+    configparser.set('ingest', 'default_user', getenv(
+        'INGEST_DEFAULT_USER', 'root'))
     configparser.set('ingest', 'transfer_size', getenv(
         'TRANSFER_SIZE', '4 Mb'))
     configparser.set('ingest', 'volume_path', getenv(

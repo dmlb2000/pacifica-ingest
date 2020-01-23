@@ -6,7 +6,7 @@ import os
 from tempfile import mkstemp
 from pacifica.ingest.__main__ import cmd
 from pacifica.ingest.orm import IngestState, read_state
-from ingest_db_setup_test import IngestDBSetup
+from .ingest_db_setup_test import IngestDBSetup
 
 
 class TestEntryPoints(IngestDBSetup):
