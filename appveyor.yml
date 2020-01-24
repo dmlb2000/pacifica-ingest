@@ -142,6 +142,10 @@ test_script:
     Invoke-WebRequest 'http://127.0.0.1:8066/get_state?job_id=1';
     coverage run --include="*/site-packages/pacifica/ingest/*" -p -m pytest -xv ingest_test.py upload_test.py utils_test.py move_test.py;
     error_and_dump $?;
+    cp test_data/good.tar test_data/retry.tar;
+    cp test_data/move-md.json test_data/retry-md.json;
+    coverage run --include="*/site-packages/pacifica/ingest/*" -a cmd_test.py retry --path=test_data/retry-md.json --job_id=1234 --move;
+    coverage run --include="*/site-packages/pacifica/ingest/*" -a cmd_test.py retry --path=test_data/retry.tar --job_id=1235;
     $policy_proc.Kill();
     $policy_proc | Wait-Process;
     pytest -xv upload_badpolicy_test.py;

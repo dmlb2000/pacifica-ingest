@@ -44,6 +44,10 @@ script:
   $RUN_CMD -p -m pacifica.ingest --stop-after-a-moment &
   SERVER_PID=$!
   $RUN_CMD -p -m pytest -xsv ingest_test.py upload_test.py utils_test.py move_test.py
+  cp test_data/good.tar test_data/retry.tar
+  cp test_data/move-md.json test_data/retry-md.json
+  $RUN_CMD -a cmd_test.py retry --path=test_data/retry-md.json --job_id=1234 --move
+  $RUN_CMD -a cmd_test.py retry --path=test_data/retry.tar --job_id=1235
   sudo service policy stop
   $RUN_CMD -p -m pytest -xsv upload_badpolicy_test.py
   sudo service policy start

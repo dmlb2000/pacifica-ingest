@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Ingest module."""
 import os
+import getpass
 from sys import argv as sys_argv
 from time import sleep
 from threading import Thread
@@ -9,6 +10,7 @@ from argparse import ArgumentParser, SUPPRESS
 import cherrypy
 from peewee import OperationalError
 from .rest import Root, error_page_default
+from .tasks import move, ingest
 from .orm import OrmSync, update_state, IngestStateSystem, SCHEMA_MAJOR, SCHEMA_MINOR
 from .globals import CONFIG_FILE, CHERRYPY_CONFIG
 
@@ -73,6 +75,16 @@ def cmd(argv=None):
         dest='config', help='ingest config file'
     )
     subparsers = parser.add_subparsers(help='sub-command help')
+    setup_job_subparser(subparsers)
+    setup_db_subparser(subparsers)
+    setup_dbchk_subparser(subparsers)
+    setup_retry_subparser(subparsers)
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+def setup_job_subparser(subparsers):
+    """Add the job subparser."""
     job_parser = subparsers.add_parser(
         'job', help='job help', description='manage jobs')
     for attr in ['job_id', 'state', 'task', 'task_percent', 'exception']:
@@ -82,11 +94,19 @@ def cmd(argv=None):
             help='set the {}'.format(attr)
         )
     job_parser.set_defaults(func=update_wrapper)
+
+
+def setup_db_subparser(subparsers):
+    """Setup the dbsync subparser."""
     db_parser = subparsers.add_parser(
         'dbsync',
         description='Update or Create the Database.'
     )
     db_parser.set_defaults(func=dbsync)
+
+
+def setup_dbchk_subparser(subparsers):
+    """Setup the dbchk subparser."""
     dbchk_parser = subparsers.add_parser(
         'dbchk',
         description='Check database against current version.'
@@ -96,8 +116,31 @@ def cmd(argv=None):
         dest='check_equal', action='store_true'
     )
     dbchk_parser.set_defaults(func=dbchk)
-    args = parser.parse_args(argv)
-    return args.func(args)
+
+
+def setup_retry_subparser(subparsers):
+    """Setup Ingest/Move retry subparsers."""
+    retry_parser = subparsers.add_parser(
+        'retry',
+        description='Retry a move or ingest from a local file.'
+    )
+    retry_parser.add_argument(
+        '--move', default=False,
+        dest='move', action='store_true'
+    )
+    retry_parser.add_argument(
+        '--path', dest='file_path',
+        help='Path to the tar or json file on ingester.'
+    )
+    retry_parser.add_argument(
+        '--username', dest='username', default=getpass.getuser(),
+        help='Username of the actor performing the ingest.'
+    )
+    retry_parser.add_argument(
+        '--job_id', dest='job_id',
+        help='Job ID to use when ingesting.'
+    )
+    retry_parser.set_defaults(func=cli_ingest_move)
 
 
 def update_wrapper(args):
@@ -132,6 +175,13 @@ def dbchk(args):
     if args.check_equal:
         return bool2cmdint(IngestStateSystem.is_equal())
     return bool2cmdint(IngestStateSystem.is_safe())
+
+
+def cli_ingest_move(args):
+    """Call a local ingest or move action."""
+    if args.move:
+        return move(args.job_id, args.file_path, args.username)
+    return ingest(args.job_id, args.file_path, args.username)
 
 
 if __name__ == '__main__':
