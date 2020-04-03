@@ -4,11 +4,13 @@
 from __future__ import absolute_import, print_function
 import os
 import traceback
+import json
 import requests
 from celery import Celery
 from .tarutils import open_tar, MetaParser, TarIngester, patch_files
 from .orm import update_state
 from .config import get_config
+from .drupal import post_metadata_drupal
 
 
 INGEST_APP = Celery(
@@ -103,6 +105,11 @@ def ingest_metadata(job_id, meta):
     if not success:
         # rollback files
         update_state(job_id, 'FAILED', 'ingest metadata', 0, str(exception))
+        raise IngestException()
+    success, exception = post_metadata_drupal(json.loads(meta.meta_str))
+    if not success:
+        # rollback files
+        update_state(job_id, 'FAILED', 'ingest drupal metadata', 0, str(exception))
         raise IngestException()
     update_state(job_id, 'OK', 'ingest metadata', 100)
 

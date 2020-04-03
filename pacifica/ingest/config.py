@@ -42,5 +42,8 @@ def get_config():
         'BROKER_URL', 'pyamqp://'))
     configparser.set('celery', 'backend_url', getenv(
         'BACKEND_URL', 'rpc://'))
+    configparser.add_section('drupal')
+    configparser.set('drupal', 'url', getenv(
+        'DRUPAL_URL', 'http://localhost/jsonapi'))
     configparser.read(CONFIG_FILE)
     return configparser
