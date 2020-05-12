@@ -22,16 +22,13 @@ environment:
 install:
 - ps: >
     & "$env:PYTHON\python.exe" -m virtualenv C:\pacifica;
-    Invoke-WebRequest -Uri "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.5.zip" -OutFile "elasticsearch.zip";
-    Expand-Archive "elasticsearch.zip" -DestinationPath "C:\elasticsearch";
-    Start-Process C:\elasticsearch\elasticsearch-5.6.5\bin\elasticsearch;
     nuget install redis-64 -excludeversion;
     redis-64\tools\redis-server.exe --service-install;
     redis-64\tools\redis-server.exe --service-start;
     C:\pacifica\Scripts\activate.ps1;
     python -m pip install --upgrade pip setuptools wheel;
-    python -m pip install -r requirements-dev.txt;
-    python -m pip install 'celery[eventlet]' eventlet redis;
+    pip install -r requirements-dev.txt;
+    pip install 'celery[eventlet]' eventlet redis;
     echo "done";
 
 build: off

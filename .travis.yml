@@ -2,141 +2,158 @@ language: python
 dist: bionic
 python: 3.6
 stages:
-- lint
-- test
-- test-docker
-- deploy
+  - lint
+  - test
+  - test-docs
+  - test-docker
+  - deploy
 env:
   NOTIFICATIONS_DISABLED: True
   PEEWEE_URL: postgres://postgres:@localhost/pacifica_metadata
   BROKER_URL: redis://127.0.0.1:6379/0
   ADMIN_USER_ID: 10
 script:
-- pip install 'redis'
-- export INGEST_CPCONFIG="$PWD/server.conf"
-- export INGEST_CONFIG="$PWD/travis/config.ini"
-- cd tests
-- pip install pacifica-ingest==0.2.0
-- python -c 'from pacifica.ingest.orm import database_setup; database_setup()'
-- pip install ..
-- |
-  echo foo > /tmp/foo.txt
-  set -x
-  RUN_CMD="coverage run --include=*/site-packages/pacifica/ingest/*"
-  $RUN_CMD -m pacifica.ingest
-  ret_val=$?
-  if [[ $ret_val == 0 ]] ; then exit -1; fi
-  $RUN_CMD -a cmd_test.py dbchk --equal
-  ret_val=$?
-  if [[ $ret_val == 0 ]] ; then exit -1; fi
-  $RUN_CMD -a cmd_test.py dbchk
-  ret_val=$?
-  if [[ $ret_val == 0 ]] ; then exit -1; fi
-  set -e
-  $RUN_CMD -a cmd_test.py dbsync
-  psql -c 'drop database pacifica_ingest;' -U postgres
-  psql -c 'create database pacifica_ingest;' -U postgres
-  $RUN_CMD -a cmd_test.py dbsync
-  $RUN_CMD -a cmd_test.py dbchk --equal
-  $RUN_CMD -a cmd_test.py dbchk
-  $RUN_CMD -p -m celery -A pacifica.ingest.tasks worker --loglevel=info -c 1 -P solo &
-  CELERY_PID=$!
-  $RUN_CMD -p -m pacifica.ingest --stop-after-a-moment &
-  SERVER_PID=$!
-  $RUN_CMD -p -m pytest -xsv ingest_test.py upload_test.py utils_test.py move_test.py
-  cp test_data/good.tar test_data/retry.tar
-  cp test_data/move-md.json test_data/retry-md.json
-  $RUN_CMD -a cmd_test.py retry --path=test_data/retry-md.json --job_id=1234 --move
-  $RUN_CMD -a cmd_test.py retry --path=test_data/retry.tar --job_id=1235
-  sudo service policy stop
-  $RUN_CMD -p -m pytest -xsv upload_badpolicy_test.py
-  sudo service policy start
-  sudo service archiveinterface stop
-  sleep 2
-  $RUN_CMD -p -m pytest -xsv upload_badai_test.py
-  celery -A pacifica.ingest.tasks control shutdown || true
-  sudo service policy stop
-  sudo service metadata stop
-  sudo service uniqueid stop
-  wait ${SERVER_PID}
-  $RUN_CMD -p -m pytest -xsv entry_points_test.py
-  set +x
-- coverage combine .coverage*
-- coverage report -m --fail-under 100
+  - pip install 'redis'
+  - export INGEST_CPCONFIG="$PWD/server.conf"
+  - export INGEST_CONFIG="$PWD/travis/config.ini"
+  - cd tests
+  - pip install pacifica-ingest==0.2.0
+  - python -c 'from pacifica.ingest.orm import database_setup; database_setup()'
+  - pip install ..
+  - |
+    echo foo > /tmp/foo.txt
+    set -x
+    RUN_CMD="coverage run --include=*/site-packages/pacifica/ingest/*"
+    $RUN_CMD -m pacifica.ingest
+    ret_val=$?
+    if [[ $ret_val == 0 ]] ; then exit -1; fi
+    $RUN_CMD -a cmd_test.py dbchk --equal
+    ret_val=$?
+    if [[ $ret_val == 0 ]] ; then exit -1; fi
+    $RUN_CMD -a cmd_test.py dbchk
+    ret_val=$?
+    if [[ $ret_val == 0 ]] ; then exit -1; fi
+    set -e
+    $RUN_CMD -a cmd_test.py dbsync
+    psql -c 'drop database pacifica_ingest;' -U postgres
+    psql -c 'create database pacifica_ingest;' -U postgres
+    $RUN_CMD -a cmd_test.py dbsync
+    $RUN_CMD -a cmd_test.py dbchk --equal
+    $RUN_CMD -a cmd_test.py dbchk
+    $RUN_CMD -p -m celery -A pacifica.ingest.tasks worker --loglevel=info -c 1 -P solo &
+    CELERY_PID=$!
+    $RUN_CMD -p -m pacifica.ingest --stop-after-a-moment &
+    SERVER_PID=$!
+    $RUN_CMD -p -m pytest -xsv ingest_test.py upload_test.py utils_test.py move_test.py
+    cp test_data/good.tar test_data/retry.tar
+    cp test_data/move-md.json test_data/retry-md.json
+    $RUN_CMD -a cmd_test.py retry --path=test_data/retry-md.json --job_id=1234 --move
+    $RUN_CMD -a cmd_test.py retry --path=test_data/retry.tar --job_id=1235
+    sudo service policy stop
+    $RUN_CMD -p -m pytest -xsv upload_badpolicy_test.py
+    sudo service policy start
+    sudo service archiveinterface stop
+    sleep 2
+    $RUN_CMD -p -m pytest -xsv upload_badai_test.py
+    celery -A pacifica.ingest.tasks control shutdown || true
+    sudo service policy stop
+    sudo service metadata stop
+    sudo service uniqueid stop
+    wait ${SERVER_PID}
+    $RUN_CMD -p -m pytest -xsv entry_points_test.py
+    set +x
+  - coverage combine .coverage*
+  - coverage report -m --fail-under 100
 before_script:
-- pip install ansible
-- ansible-galaxy install pacifica.ansible_pacifica pacifica.ansible_travis
-- ansible-playbook ~/.ansible/roles/pacifica.ansible_travis/molecule/common/playbook.yml -i ~/.ansible/roles/pacifica.ansible_travis/molecule/common/inventory.yml -e "ansible_python_interpreter=/home/travis/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/python travis_virtualenv=python${TRAVIS_PYTHON_VERSION} github_repository=ingest"
-- |
-  pushd tests/test_data
-  for x in good bad-project bad-mimetype bad-hashsum ; do
-    cp metadata-files/${x}-md.json metadata.txt
-    tar -cf ${x}.tar metadata.txt data
-  done
-  cp metadata-files/bad-json-md.notjson metadata.txt
-  tar -cf bad-json.tar metadata.txt data
-  popd
-- curl 'localhost:8051/getid?range=1000&mode=file'
+  - pip install ansible
+  - ansible-galaxy install pacifica.ansible_pacifica pacifica.ansible_travis
+  - ansible-playbook ~/.ansible/roles/pacifica.ansible_travis/molecule/common/playbook.yml -i ~/.ansible/roles/pacifica.ansible_travis/molecule/common/inventory.yml -e "ansible_python_interpreter=/home/travis/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/python travis_virtualenv=python${TRAVIS_PYTHON_VERSION} github_repository=ingest"
+  - |
+    pushd tests/test_data
+    for x in good bad-project bad-mimetype bad-hashsum ; do
+      cp metadata-files/${x}-md.json metadata.txt
+      tar -cf ${x}.tar metadata.txt data
+    done
+    cp metadata-files/bad-json-md.notjson metadata.txt
+    tar -cf bad-json.tar metadata.txt data
+    popd
+  - curl 'localhost:8051/getid?range=1000&mode=file'
 jobs:
   include:
-  - stage: lint
-    before_script: skip
-    script: pre-commit run -a
-  - python: 3.7
-    before_script: skip
-    script: pre-commit run -a
-  - python: 3.8
-    before_script: skip
-    script: pre-commit run -a
-  - stage: test
-  - python: 3.7
-  - python: 3.8
-  - stage: test-docker
-    python: 3.8
-    sudo: required
-    before_script: skip
-    services:
-    - docker
-    script:
-    - |
-      docker-compose build --pull;
-      docker-compose pull;
-      docker-compose up -d;
-    - |
-      pip install pacifica-cli;
-      mkdir ~/.pacifica-cli;
-      cp travis/uploader.json ~/.pacifica-cli/uploader.json
-      printf 'http://localhost:8066/upload\nhttp://localhost:8066/get_state\nhttp://localhost:8181/uploader\nhttp://localhost:8181/ingest\nhttp://localhost:8081\nhttp://localhost:8181/status/transactions/by_id\nTrue\nNone\n' | pacifica-cli --config ~/.pacifica-cli/uploader.json configure;
-      cd tests;
-    - |
-      MAX_TRIES=60;
-      HTTP_CODE=$(docker-compose exec metadataserver curl -sL -w "%{http_code}\\n" localhost:8121/keys -o /dev/null || true);
-      while [[ $HTTP_CODE != 200 && $MAX_TRIES > 0 ]] ; do
-        sleep 2;
-        HTTP_CODE=$(docker-compose exec metadataserver curl -sL -w "%{http_code}\\n" localhost:8121/keys -o /dev/null || true);
-        MAX_TRIES=$(( MAX_TRIES - 1 ));
-      done;
-      docker-compose exec metadataserver curl -sL -w "%{http_code}\\n" localhost:8121/keys
-    - |
-      docker-compose exec metadataserver /bin/bash -c 'cd /usr/src/app/tests; python test_files/loadit_test.py';
-      curl http://127.0.0.1:8181/status/users/search/dmlb2001/simple;
-      pacifica-cli --config ~/.pacifica-cli/uploader.json upload --logon 10 test_data
-  - stage: deploy
-    services: []
-    language: python
-    python: 3.8
-    before_install: skip
-    script: skip
-    deploy:
-      skip_cleanup: true
-      provider: pypi
-      user: dmlb2000
-      distributions: sdist bdist_wheel
-      password:
-        secure: dspmJGqWBVYbNImug5s7gchNfp2B9frCHGEpkfZth78FTzK00f6X8JjYqy7gwychiOD/NFD6WhZSy7vqv2vzDXbk8pJrcJ6gwd+2ZGcoqdp6v3RwYq6ntsJhtDvmWD6oIs8hx+JzAcYOBKfzHg3wDZegM+VfDJfGA+xqy/fHeBSORh1WSaIDOq2u/Gnufg6HOIZxd47VzKeTMgJcrF1Qoa9P2nTpxGBDrKBOFodvTay6qQso2F8JMHtpqHabfvq7FjvOCarjLPlwWTfFFEIP87rDcCAK4YKUjyU8hGedekhLOMSabbTQpcHMYFK1rMpCPuzIMYFe/GApgdY6PpHnDWv/t2zHg6BhAtpT7qhnOG8GK0jA7uHsiOYEjaOUIYhEZvS301B1fqSy1jsm55tmbekQF0AIyQLn8EhbVFSMxXxtn/DDBkswDgayMSdNaPZtQsQMba4tDt8GqPrloBfmaXfGyXcrLD9zYiDR7Nn4EVIoV0nsK04GPUT9gB7a5I6LskI6D2ri3/3a18rAfrJBltnkvPzLS3rRbmj5v01kChmQ4md45Xr15OKg4j9gLzOTMFgpcHIMsl1Od3gE64Pb7X5/x8fB957qwtx+NnEZ+VcWPgzvU+3Op8laHh3mUHfbq/GmVo4fD162dnDRuNjEp4Tgom10Yu+l/tGkw67H2Io=
-      on:
-        tags: true
+    - stage: lint
+      before_script: skip
+      script:
+        - pip install .
+        - pre-commit run -a
+    - python: 3.7
+      before_script: skip
+      script:
+        - pip install .
+        - pre-commit run -a
+    - python: 3.8
+      before_script: skip
+      script:
+        - pip install .
+        - pre-commit run -a
+    - stage: test
+    - python: 3.7
+    - python: 3.8
+    - stage: test-docs
+      python: 3.8
+      before_script: skip
+      script: >
+        pip install .;
+        cd docs;
+        sphinx-build -T -E -b readthedocs -d _build/doctrees-readthedocs -D language=en . _build/html;
+        sphinx-build -T -b readthedocssinglehtmllocalmedia -d _build/doctrees-readthedocssinglehtmllocalmedia -D language=en . _build/localmedia;
+        sphinx-build -b latex -D language=en -d _build/doctrees . _build/latex;
+        sphinx-build -T -b epub -d _build/doctrees-epub -D language=en . _build/epub
+    - stage: test-docker
+      python: 3.8
+      sudo: required
+      before_script: skip
+      services:
+        - docker
+      script:
+        - |
+          docker-compose build --pull;
+          docker-compose pull;
+          docker-compose up -d;
+        - |
+          pip install pacifica-cli;
+          mkdir ~/.pacifica-cli;
+          cp travis/uploader.json ~/.pacifica-cli/uploader.json
+          printf 'http://localhost:8066/upload\nhttp://localhost:8066/get_state\nhttp://localhost:8181/uploader\nhttp://localhost:8181/ingest\nhttp://localhost:8081\nhttp://localhost:8181/status/transactions/by_id\nTrue\nNone\n' | pacifica-cli --config ~/.pacifica-cli/uploader.json configure;
+          cd tests;
+        - |
+          MAX_TRIES=60;
+          HTTP_CODE=$(docker-compose exec metadataserver curl -sL -w "%{http_code}\\n" localhost:8121/keys -o /dev/null || true);
+          while [[ $HTTP_CODE != 200 && $MAX_TRIES > 0 ]] ; do
+            sleep 2;
+            HTTP_CODE=$(docker-compose exec metadataserver curl -sL -w "%{http_code}\\n" localhost:8121/keys -o /dev/null || true);
+            MAX_TRIES=$(( MAX_TRIES - 1 ));
+          done;
+          docker-compose exec metadataserver curl -sL -w "%{http_code}\\n" localhost:8121/keys
+        - |
+          docker-compose exec metadataserver /bin/bash -c 'cd /usr/src/app/tests; python test_files/loadit_test.py';
+          curl http://127.0.0.1:8181/status/users/search/dmlb2001/simple;
+          pacifica-cli --config ~/.pacifica-cli/uploader.json upload --logon 10 test_data
+    - stage: deploy
+      services: []
+      language: python
+      python: 3.8
+      before_install: skip
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: pypi
+        user: dmlb2000
+        distributions: sdist bdist_wheel
+        password:
+          secure: dspmJGqWBVYbNImug5s7gchNfp2B9frCHGEpkfZth78FTzK00f6X8JjYqy7gwychiOD/NFD6WhZSy7vqv2vzDXbk8pJrcJ6gwd+2ZGcoqdp6v3RwYq6ntsJhtDvmWD6oIs8hx+JzAcYOBKfzHg3wDZegM+VfDJfGA+xqy/fHeBSORh1WSaIDOq2u/Gnufg6HOIZxd47VzKeTMgJcrF1Qoa9P2nTpxGBDrKBOFodvTay6qQso2F8JMHtpqHabfvq7FjvOCarjLPlwWTfFFEIP87rDcCAK4YKUjyU8hGedekhLOMSabbTQpcHMYFK1rMpCPuzIMYFe/GApgdY6PpHnDWv/t2zHg6BhAtpT7qhnOG8GK0jA7uHsiOYEjaOUIYhEZvS301B1fqSy1jsm55tmbekQF0AIyQLn8EhbVFSMxXxtn/DDBkswDgayMSdNaPZtQsQMba4tDt8GqPrloBfmaXfGyXcrLD9zYiDR7Nn4EVIoV0nsK04GPUT9gB7a5I6LskI6D2ri3/3a18rAfrJBltnkvPzLS3rRbmj5v01kChmQ4md45Xr15OKg4j9gLzOTMFgpcHIMsl1Od3gE64Pb7X5/x8fB957qwtx+NnEZ+VcWPgzvU+3Op8laHh3mUHfbq/GmVo4fD162dnDRuNjEp4Tgom10Yu+l/tGkw67H2Io=
+        on:
+          tags: true
 install:
-- pip install -r requirements-dev.txt
-- pip install uwsgi
-- pip freeze
+  - pip install -r requirements-dev.txt
+  - pip install uwsgi
+  - pip freeze

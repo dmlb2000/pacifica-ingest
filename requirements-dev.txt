@@ -1,4 +1,3 @@
--r requirements.txt
 coverage<5
 mock
 pacifica-archiveinterface
@@ -10,4 +9,7 @@ pre-commit
 pylint>2
 pytest
 radon
+readthedocs-sphinx-ext
 recommonmark
+sphinx
+sphinx-rtd-theme

@@ -1,5 +1,0 @@
-celery
-cherrypy
-peewee>2
-requests
-setuptools
