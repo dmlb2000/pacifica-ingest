@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2020-05-13
+### Changed
+- Pull #94 Remove Requirements pip>=20 by [@dmlb2000](https://github.com/dmlb2000)
+
 ## [0.4.0] - 2020-01-24
 ### Changed
 - Pull #94 Pylint 2.0+ Support by [@dmlb2000](https://github.com/dmlb2000)
