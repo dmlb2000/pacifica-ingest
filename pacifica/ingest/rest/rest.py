@@ -116,21 +116,3 @@ class RestUpload:
         ingest.delay(job_id, name, authed_user)
         return create_state_response(read_state(job_id))
     # pylint: enable=invalid-name
-
-
-class Root:
-    """The CherryPy root object."""
-
-    exposed = True
-    get_state = RestIngestState()
-    upload = RestUpload()
-    move = RestMove()
-
-    @staticmethod
-    @cherrypy.tools.json_out()
-    # pylint: disable=invalid-name
-    def GET():
-        """Return happy message about functioning service."""
-        return {'message': 'Pacifica Ingest Up and Running'}
-    # pylint: enable=invalid-name
-# pylint: enable=too-few-public-methods

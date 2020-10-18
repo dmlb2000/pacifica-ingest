@@ -8,10 +8,11 @@ from time import sleep
 from threading import Thread
 from argparse import ArgumentParser, SUPPRESS
 import cherrypy
-from peewee import OperationalError
-from .rest import Root, error_page_default
+from pacifica.auth import pacifica_auth_arguments, error_page_default, social_settings
+from pacifica.auth.root import Root
+from .rest import Session
 from .tasks import move, ingest
-from .orm import OrmSync, update_state, IngestStateSystem, SCHEMA_MAJOR, SCHEMA_MINOR
+from .orm import User
 from .globals import CONFIG_FILE, CHERRYPY_CONFIG
 
 
@@ -36,9 +37,6 @@ def stop_later(doit=False):
 def main(argv=None):
     """Main method to start the httpd server."""
     parser = ArgumentParser(description='Run the cart server.')
-    parser.add_argument('--cp-config', metavar='CPCONFIG', type=str,
-                        default=CHERRYPY_CONFIG, dest='cpconfig',
-                        help='cherrypy config file')
     parser.add_argument('-c', '--config', metavar='CONFIG', type=str,
                         default=CONFIG_FILE, dest='config',
                         help='ingest config file')
@@ -51,20 +49,22 @@ def main(argv=None):
     parser.add_argument('--stop-after-a-moment', help=SUPPRESS,
                         default=False, dest='stop_later',
                         action='store_true')
+    pacifica_auth_arguments(parser)
     args = parser.parse_args(argv)
-    OrmSync.dbconn_blocking()
-    if not IngestStateSystem.is_safe():
-        raise OperationalError('Database version too old {} update to {}'.format(
-            '{}.{}'.format(*(IngestStateSystem.get_version())),
-            '{}.{}'.format(SCHEMA_MAJOR, SCHEMA_MINOR)
-        ))
+    social_settings(args, User, 'pacifica.auth.user_model.User')
     stop_later(args.stop_later)
-    cherrypy.config.update({'error_page.default': error_page_default})
+    common_config={
+        '/': {
+            'error_page.default': error_page_default,
+            'request.dispatch': cherrypy.dispatch.MethodDispatcher()
+        }
+    }
+    cherrypy.tree.mount(Session(), '/session', config=common_config)
     cherrypy.config.update({
         'server.socket_host': args.address,
         'server.socket_port': args.port
     })
-    cherrypy.quickstart(Root(), '/', args.cpconfig)
+    cherrypy.quickstart(Root(args.sa_module, args.app_dir), '/', config={'/': {}})
 
 
 def cmd(argv=None):
@@ -77,7 +77,6 @@ def cmd(argv=None):
     subparsers = parser.add_subparsers(help='sub-command help')
     setup_job_subparser(subparsers)
     setup_db_subparser(subparsers)
-    setup_dbchk_subparser(subparsers)
     setup_retry_subparser(subparsers)
     args = parser.parse_args(argv)
     return args.func(args)
@@ -102,20 +101,8 @@ def setup_db_subparser(subparsers):
         'dbsync',
         description='Update or Create the Database.'
     )
+    pacifica_auth_arguments(db_parser)
     db_parser.set_defaults(func=dbsync)
-
-
-def setup_dbchk_subparser(subparsers):
-    """Setup the dbchk subparser."""
-    dbchk_parser = subparsers.add_parser(
-        'dbchk',
-        description='Check database against current version.'
-    )
-    dbchk_parser.add_argument(
-        '--equal', default=False,
-        dest='check_equal', action='store_true'
-    )
-    dbchk_parser.set_defaults(func=dbchk)
 
 
 def setup_retry_subparser(subparsers):
@@ -163,18 +150,12 @@ def bool2cmdint(command_bool):
 
 def dbsync(args):
     """Create/Update the database schema to current code."""
-    os.environ['INGEST_CONFIG'] = args.config
-    OrmSync.dbconn_blocking()
-    return OrmSync.update_tables()
-
-
-def dbchk(args):
-    """Check to see if the database is safe to use."""
-    os.environ['INGEST_CONFIG'] = args.config
-    OrmSync.dbconn_blocking()
-    if args.check_equal:
-        return bool2cmdint(IngestStateSystem.is_equal())
-    return bool2cmdint(IngestStateSystem.is_safe())
+    Base.metadata.create_all(args.engine)
+    # this needs to be imported after cherrypy settings are applied.
+    # pylint: disable=import-outside-toplevel
+    from social_cherrypy.models import SocialBase
+    SocialBase.metadata.create_all(args.engine)
+    return 0
 
 
 def cli_ingest_move(args):

@@ -107,20 +107,13 @@ def ingest_metadata(job_id, meta):
     update_state(job_id, 'OK', 'ingest metadata', 100)
 
 
-@INGEST_APP.task(ignore_result=False)
-def move(job_id, filepath, authed_user):
+@INGEST_APP.task
+def move(move_data, user_uuid):
     """Move a MD bundle into the archive."""
-    try:
-        meta = move_metadata_parser(job_id, filepath)
-        ingest_policy_check(job_id, meta.meta_str, authed_user)
-        move_files(job_id, meta)
-        ingest_metadata(job_id, meta)
-        os.unlink(filepath)
-    except IngestException:
-        return
+    pass
 
 
-@INGEST_APP.task(ignore_result=False)
+@INGEST_APP.task
 def ingest(job_id, filepath, authed_user):
     """Ingest a tar bundle into the archive."""
     try:
