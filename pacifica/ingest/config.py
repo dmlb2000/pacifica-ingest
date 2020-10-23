@@ -12,12 +12,16 @@ def get_config():
     configparser.add_section('ingest')
     configparser.set('ingest', 'transfer_size', getenv(
         'TRANSFER_SIZE', '4 Mb'))
+    configparser.set('ingest', 'transfer_backend', getenv(
+        'TRANSFER_BACKEND', 'ssh'))
     configparser.set('ingest', 'upload_path', getenv(
         'UPLOAD_PATH', '/tmp/upload'))
     configparser.set('ingest', 'move_path', getenv(
         'MOVE_PATH', '/tmp/move'))
     configparser.set('ingest', 'session_path', getenv(
         'SESSION_PATH', '/tmp/session'))
+    configparser.set('ingest', 'ssh_auth_keys_dir', getenv(
+        'SSH_AUTH_KEYS_DIR', '/etc/ssh/keys'))
     configparser.add_section('uniqueid')
     configparser.set('uniqueid', 'url', getenv(
         'UNIQUEID_URL', 'http://127.0.0.1:8051'))

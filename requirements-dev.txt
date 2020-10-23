@@ -1,8 +1,6 @@
 coverage<5
 mock
 pacifica-archiveinterface
-pacifica-metadata>=0.7.0
-pacifica-policy>=0.4.0
 pacifica-uniqueid
 pep257
 pre-commit

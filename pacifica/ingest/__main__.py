@@ -53,7 +53,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     social_settings(args, User, 'pacifica.auth.user_model.User')
     stop_later(args.stop_later)
-    common_config={
+    common_config = {
         '/': {
             'error_page.default': error_page_default,
             'request.dispatch': cherrypy.dispatch.MethodDispatcher()

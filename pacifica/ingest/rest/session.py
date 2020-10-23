@@ -1,8 +1,25 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 """Session CherryPy Rest Endpoint."""
+import cherrypy
 from cherrypy import HTTPError
+from pacifica.auth import auth_session
 from ..orm import Session as DBSession
 from ..config import get_config
+
+
+def _render_session(session):
+    """Render the session to json."""
+    return {
+        'uuid': session.uuid,
+        'name': session.name,
+        'state': session.state,
+        'exception': session.exception,
+        'jsonapi_data': session.jsonapi_data,
+        'complete': session.complete,
+        'created': session.created.isoformat(),
+        'updated': session.updated.isoformat()
+    }
 
 
 class Session:
