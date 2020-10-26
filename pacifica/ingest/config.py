@@ -63,8 +63,10 @@ def get_config():
         'DATABASE_CONNECT_WAIT', '20'))
     configparser.add_section('celery')
     configparser.set('celery', 'broker_url', getenv(
-        'BROKER_URL', 'pyamqp://'))
+        'BROKER_URL', 'filesystem://'))
     configparser.set('celery', 'backend_url', getenv(
         'BACKEND_URL', 'rpc://'))
+    configparser.set('celery', 'filesystem_broker_dir', getenv(
+        'FILESYSTEM_BROKER_DIR', '/var/tmp'))
     configparser.read(CONFIG_FILE)
     return configparser

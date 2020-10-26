@@ -1,74 +1,82 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Session CherryPy Rest Endpoint."""
+import json
 import cherrypy
 from cherrypy import HTTPError
 from pacifica.auth import auth_session
-from ..orm import Session as DBSession
+from ..filexfer import FileXFerEngine
+from ..orm import Session, as_session, SessionEncoder
+from ..tasks import commit_session
 from ..config import get_config
 
 
-def _render_session(session):
-    """Render the session to json."""
-    return {
-        'uuid': session.uuid,
-        'name': session.name,
-        'state': session.state,
-        'exception': session.exception,
-        'jsonapi_data': session.jsonapi_data,
-        'complete': session.complete,
-        'created': session.created.isoformat(),
-        'updated': session.updated.isoformat()
-    }
+def json_handler(*args, **kwargs):
+    """Handle the json output nicely."""
+    # pylint: disable=protected-access
+    value = cherrypy.serving.request._json_inner_handler(*args, **kwargs)
+    return json.dumps(value, sort_keys=True, indent=4, cls=SessionEncoder)
 
 
-class Session:
+class UploadSession:
+    """CherryPy Upload Session."""
 
     exposed = True
     _cp_config = {}
 
     def __init__(self):
+        """Create the upload session."""
         super().__init__()
         self.session_path = get_config().get('ingest', 'session_path')
+        self._xfer_engine = FileXFerEngine()
 
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=json_handler)
     @cherrypy.tools.json_in()
     @auth_session
+    # pylint: disable=invalid-name
     def POST(self, uuid=None, **kwargs):
+        """Update an existing or create a session."""
         if not uuid:
-            session = DBSession()
+            session = Session()
             session.user_uuid = cherrypy.request.user.uuid
+            self._xfer_engine.generate_user_auth(session)
             cherrypy.request.db.add(session)
             cherrypy.request.db.commit()
+            self._xfer_engine.create_session(session)
         else:
             session = cherrypy.request.db.query(Session).filter_by(uuid=uuid).first()
         if session.user_uuid != cherrypy.request.user.uuid:
             return HTTPError(401, 'You do not own this session.')
-        for key, value in cherrypy.request.json.items():
-            setattr(session, key, value)
-        if kwargs.get('commit', False) and not session.complete:
-            session.commit_task_uuid = commit_session.delay(
-                str(cherrypy.request.db.bind.url),
-                session.uuid,
-                self.session_path
-            ).id
+        cherrypy.request.json['uuid'] = session.uuid
+        session = as_session(cherrypy.request.db, cherrypy.request.json)
+        if kwargs.get('commit', False) and not session.complete and not session.processing:
+            session.processing = True
+            cherrypy.request.db.add(session)
+            cherrypy.request.db.commit()
+            session.task_uuid = commit_session.delay(session.uuid).id
         cherrypy.request.db.add(session)
-        return _render_session(session)
+        return session
 
-    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_out(handler=json_handler)
     @auth_session
+    # pylint: disable=invalid-name
+    # pylint: disable=no-self-use
     def GET(self, uuid=None):
+        """Get an existing session."""
         if not uuid:
             return [
                 {'session': session.uuid, 'name': session.name}
                 for session in cherrypy.request.db.query(Session).filter_by(user_uuid=cherrypy.request.user.uuid)
             ]
         session = cherrypy.request.db.query(Session).filter_by(uuid=uuid).first()
-        return _render_session(session)
+        return session
 
     @auth_session
+    # pylint: disable=invalid-name
     def DELETE(self, uuid):
+        """Delete a given session."""
         session = cherrypy.request.db.query(Session).filter_by(uuid=uuid).first()
+        self._xfer_engine.delete_session(session)
         if session.user_uuid != cherrypy.request.user.uuid:
-            return HTTPError(401, 'You do not own this session.')
+            raise HTTPError(401, 'You do not own this session.')
         cherrypy.request.db.delete(session)

@@ -21,8 +21,7 @@ setup(
     namespace_packages=['pacifica'],
     entry_points={
         'console_scripts': [
-            'pacifica-ingest-front=pacifica.ingest.__main__:main',
-            'pacifica-ingest-back=pacifica.ingest.__main__:celery',
+            'pacifica-ingest=pacifica.ingest.__main__:main',
             'pacifica-ingest-cmd=pacifica.ingest.__main__:cmd'
         ]
     },
