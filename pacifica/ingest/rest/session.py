@@ -15,7 +15,7 @@ def json_handler(*args, **kwargs):
     """Handle the json output nicely."""
     # pylint: disable=protected-access
     value = cherrypy.serving.request._json_inner_handler(*args, **kwargs)
-    return json.dumps(value, sort_keys=True, indent=4, cls=SessionEncoder)
+    return json.dumps(value, sort_keys=True, indent=4, cls=SessionEncoder).encode('utf-8')
 
 
 class UploadSession:

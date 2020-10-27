@@ -50,7 +50,7 @@ def main(argv=None):
                         action='store_true')
     pacifica_auth_arguments(parser)
     args = parser.parse_args(argv)
-    social_settings(args, User, 'pacifica.auth.user_model.User')
+    social_settings(args, User, 'pacifica.ingest.orm.User')
     stop_later(args.stop_later)
     common_config = {
         '/': {
@@ -73,6 +73,7 @@ def cmd(argv=None):
         '-c', '--config', metavar='CONFIG', type=str, default=CONFIG_FILE,
         dest='config', help='ingest config file'
     )
+    parser.set_defaults(func=lambda x: parser.print_help())
     subparsers = parser.add_subparsers(help='sub-command help')
     setup_job_subparser(subparsers)
     setup_db_subparser(subparsers)

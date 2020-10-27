@@ -29,7 +29,7 @@ class Session(Base):
     processing = Column(Boolean(), default=False)
     complete = Column(Boolean(), default=False)
     user_uuid = Column(String(40), ForeignKey('user.uuid'), index=True)
-    user = relationship('User', back_populates='sessions')
+    user = relationship('User')
     created = Column(DateTime(), default=datetime.utcnow)
     updated = Column(DateTime(), default=datetime.utcnow)
 
