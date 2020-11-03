@@ -1,0 +1,113 @@
+---
+openapi: 3.0.0
+components:
+    schemas:
+        session:
+            type: object
+            properties:
+                uuid:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                task_uuid:
+                    type: string
+                    format: uuid
+                task_percent:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+                user_auth:
+                exception:
+                    type: string
+                jsonapi_data:
+                    type: string
+                processing:
+                    type: boolean
+                complete:
+                    type: boolean
+                user_uuid:
+                    type: string
+                    format: uuid
+                created:
+                    type: string
+                    format: date-time
+                updated:
+                    type: string
+                    format: date-time
+
+info:
+    title: Pacifica File Ingest Session Management
+    description: File ingest session management service for Pacifica.
+    version: 0.1.0
+
+paths:
+    /session/{uuid}:
+        get:
+            summary: Returns a users upload session.
+            description: Optional extended description in CommonMark or HTML.
+            parameters:
+                -   name: uuid
+                    in: path
+                    description: UUID of the upload session
+                    required: True
+                    type: string
+                    format: uuid
+            responses:
+                '200':    # status code
+                    description: A JSON document containing the new upload session.
+                    content:
+                        application/json:
+                            schema:
+                                "$ref": "#/components/schemas/session"
+        delete:
+            summary: Deletes a users upload session.
+            description: Optional extended description in CommonMark or HTML.
+            parameters:
+                -   name: uuid
+                    in: path
+                    description: UUID of the upload session
+                    required: True
+                    type: string
+                    format: uuid
+            responses:
+                '200':    # status code
+                    description: Deleted the session.
+    /session:
+        get:
+            summary: Returns a list users sessions.
+            description: Optional extended description in CommonMark or HTML.
+            responses:
+                '200':    # status code
+                    description: A JSON document containing the sessions for the user
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    "$ref": "#/components/schemas/session"
+        post:
+            summary: Creates a DOI Record.
+            description: Optional extended description in CommonMark or HTML.
+            requestBody:
+                description: user to add to the system
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/session'
+                        examples:
+                            minimal:
+                                summary: Minimal Ask for Session
+                                value:
+                                    name: My Cool Session
+            responses:
+                '200':    # status code
+                    description: A JSON document containing the DOI Record created
+                    content:
+                        application/json:
+                            schema:
+                                "$ref": "#/components/schemas/session"
+
+servers:
+    -   url: https://localhost:48443/
+        description: Localhost Development Server

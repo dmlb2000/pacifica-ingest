@@ -19,6 +19,7 @@ setup(
     author_email='david.brown@pnnl.gov',
     packages=find_packages(include=['pacifica.*']),
     namespace_packages=['pacifica'],
+    package_data={"": ["*.yaml"]},
     entry_points={
         'console_scripts': [
             'pacifica-ingest=pacifica.ingest.__main__:main',

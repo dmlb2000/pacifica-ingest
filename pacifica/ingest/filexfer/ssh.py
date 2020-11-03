@@ -47,9 +47,9 @@ class FileXFerSSH(FileXFerBase):
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption()
         )
-        self.username = random.choices(string.ascii_lowercase + string.digits, k=30)
+        self.username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=30))
         session.user_auth = dumps({
-            'username': ''.join(self.username),
+            'username': self.username,
             'private_key': pem.decode('utf-8'),
             'public_key': public_key.decode('utf-8')
         })
@@ -91,8 +91,8 @@ class FileXFerSSH(FileXFerBase):
         """Delete a user session."""
         user_auth = loads(session.user_auth)
         username = user_auth['username']
-        config_filename = join(self.ssh_auth_keys_dir, self.username)
-        home_dir = join(self.session_path, self.username)
+        config_filename = join(self.ssh_auth_keys_dir, username)
+        home_dir = join(self.session_path, username)
         if isfile(config_filename):
             unlink(config_filename)
         rmtree(home_dir, ignore_errors=True)

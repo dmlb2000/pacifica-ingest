@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Ingest module."""
+import os
 import json
 from sys import argv as sys_argv
 from time import sleep
@@ -63,7 +64,15 @@ def main(argv=None):
         'server.socket_host': args.address,
         'server.socket_port': args.port
     })
-    cherrypy.quickstart(Root(args.sa_module, args.app_dir), '/', config={'/': {}})
+    cherrypy.quickstart(Root(args.sa_module, args.app_dir), '/', config={
+        '/': {},
+        "/swagger.yaml": {
+            "tools.staticfile.on": True,
+            "tools.staticfile.filename": os.path.join(
+                os.path.dirname(__file__), "swagger.yaml"
+            ),
+        },
+    })
 
 
 def cmd(argv=None):
