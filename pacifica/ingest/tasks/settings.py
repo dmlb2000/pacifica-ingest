@@ -1,16 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Celery Settings Module."""
+from os import getenv
 from os.path import join
+from argparse import Namespace
 import collections
-from ..config import get_config
+from pacifica.auth import create_configparser
 
-_broker_dir = get_config().get('celery', 'filesystem_broker_dir')
+configparser = create_configparser(Namespace(config=getenv('CONFIG_FILE', 'config.ini')))
+_broker_dir = configparser.get('celery', 'filesystem_broker_dir')
 celery_settings = collections.defaultdict(
     loglevel='INFO',
     traceback=True,
-    broker=get_config().get('celery', 'broker_url'),
-    backend=get_config().get('celery', 'backend_url'),
+    broker=configparser.get('celery', 'broker_url'),
+    backend=configparser.get('celery', 'backend_url'),
     broker_transport_options=collections.defaultdict(
         data_folder_in=join(_broker_dir, 'out'),
         data_folder_out=join(_broker_dir, 'out'),

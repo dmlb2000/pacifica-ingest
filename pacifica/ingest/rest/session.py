@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Session CherryPy Rest Endpoint."""
+from configparser import ConfigParser
 import json
 import cherrypy
 from cherrypy import HTTPError
@@ -8,7 +9,6 @@ from pacifica.auth import auth_session
 from ..filexfer import FileXFerEngine
 from ..orm import Session, as_session, SessionEncoder
 from ..tasks import commit_session
-from ..config import get_config
 
 
 def json_handler(*args, **kwargs):
@@ -24,11 +24,11 @@ class UploadSession:
     exposed = True
     _cp_config = {}
 
-    def __init__(self):
+    def __init__(self, configparser: ConfigParser):
         """Create the upload session."""
         super().__init__()
-        self.session_path = get_config().get('ingest', 'session_path')
-        self._xfer_engine = FileXFerEngine()
+        self.session_path = configparser.get('ingest', 'session_path')
+        self._xfer_engine = FileXFerEngine(configparser)
 
     @cherrypy.tools.json_out(handler=json_handler)
     @cherrypy.tools.json_in()

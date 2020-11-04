@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 """Configuration reading and validation module."""
 from os import getenv
-from configparser import ConfigParser as SafeConfigParser
-from pacifica.ingest.globals import CONFIG_FILE
+from configparser import ConfigParser
 
 
-def get_config():
+def ingest_config(configparser: ConfigParser):
     """Return the ConfigParser object with defaults set."""
-    configparser = SafeConfigParser()
     configparser.add_section('ingest')
     configparser.set('ingest', 'transfer_size', getenv(
         'TRANSFER_SIZE', '4 Mb'))
@@ -54,19 +52,3 @@ def get_config():
         'METADATA_DRUPAL_CONTENT_TYPE', 'data_upload'))
     configparser.set('metadata', 'drupal_field', getenv(
         'METADATA_DRUPAL_FIELD', 'field_file_data'))
-    configparser.add_section('database')
-    configparser.set('database', 'db_url', getenv(
-        'DATABASE_CONNECT_URL', 'sqlite:///db.sqlite3'))
-    configparser.set('database', 'connect_attempts', getenv(
-        'DATABASE_CONNECT_ATTEMPTS', '10'))
-    configparser.set('database', 'connect_wait', getenv(
-        'DATABASE_CONNECT_WAIT', '20'))
-    configparser.add_section('celery')
-    configparser.set('celery', 'broker_url', getenv(
-        'BROKER_URL', 'filesystem://'))
-    configparser.set('celery', 'backend_url', getenv(
-        'BACKEND_URL', 'rpc://'))
-    configparser.set('celery', 'filesystem_broker_dir', getenv(
-        'FILESYSTEM_BROKER_DIR', '/var/tmp'))
-    configparser.read(CONFIG_FILE)
-    return configparser

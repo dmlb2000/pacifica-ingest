@@ -1,12 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Abstract base class for backends."""
+from configparser import ConfigParser
 import abc
 from ..orm import Session
 
 
 class FileXFerBase(abc.ABC):
     """Base class for file transfer interface."""
+
+    @abc.abstractmethod
+    def __init__(self, configparser: ConfigParser):
+        """Create and assign instance variables."""
 
     @abc.abstractmethod
     def generate_user_auth(self, session: Session) -> None:

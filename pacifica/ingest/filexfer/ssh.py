@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """File transfer ssh backend module."""
+from configparser import ConfigParser
 from os import unlink, mkdir, chown, chmod
 from os.path import join, isfile
 from shutil import rmtree
@@ -13,7 +14,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from .abstract import FileXFerBase
-from ..config import get_config
 from ..orm import Session
 
 
@@ -25,11 +25,12 @@ class FileXFerSSH(FileXFerBase):
     and run on a supported platform.
     """
 
-    def __init__(self):
+    def __init__(self, configparser: ConfigParser):
         """Create and assign instance variables."""
-        self.session_path = get_config().get('ingest', 'session_path')
+        super().__init__(configparser)
+        self.session_path = configparser.get('ingest', 'session_path')
         self.username = None
-        self.ssh_auth_keys_dir = get_config().get('ingest', 'ssh_auth_keys_dir')
+        self.ssh_auth_keys_dir = configparser.get('ingest', 'ssh_auth_keys_dir')
 
     def generate_user_auth(self, session: Session) -> None:
         """Generate the ssh authentication username and password."""

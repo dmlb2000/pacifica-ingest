@@ -49,7 +49,7 @@ class SessionEncoder(json.JSONEncoder):
             for key in plain_keys:
                 ret[key] = getattr(o, key)
             for key in ['user_auth', 'jsonapi_data']:
-                ret[key] = ""
+                ret[key] = ''
                 if getattr(o, key):
                     ret[key] = json.loads(getattr(o, key))
             for key in ['created', 'updated']:

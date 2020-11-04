@@ -1,93 +1,46 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Ingest module."""
+from configparser import ConfigParser
 import os
 import json
 from sys import argv as sys_argv
-from time import sleep
-from threading import Thread
-from argparse import ArgumentParser, SUPPRESS
 import cherrypy
-from pacifica.auth import pacifica_auth_arguments, error_page_default, social_settings
-from pacifica.auth.root import Root
+from sqlalchemy.engine import create_engine
+from pacifica.auth import error_page_default, quickstart, create_configparser, create_argparser
 from .rest import UploadSession
 from .tasks import get_db_session
 from .orm import User, Base, Session, SessionEncoder
-from .globals import CONFIG_FILE
+from .config import ingest_config
 
 
-def stop_later(doit=False):
-    """Used for unit testing stop after 60 seconds."""
-    if not doit:  # pragma: no cover
-        return
-
-    def sleep_then_exit():
-        """
-        Sleep for 90 seconds then call cherrypy exit.
-
-        Hopefully this is long enough for the end-to-end tests to finish
-        """
-        sleep(120)
-        cherrypy.engine.exit()
-    sleep_thread = Thread(target=sleep_then_exit)
-    sleep_thread.daemon = True
-    sleep_thread.start()
-
-
-def main(argv=None):
-    """Main method to start the httpd server."""
-    parser = ArgumentParser(description='Run the cart server.')
-    parser.add_argument('-c', '--config', metavar='CONFIG', type=str,
-                        default=CONFIG_FILE, dest='config',
-                        help='ingest config file')
-    parser.add_argument('-p', '--port', metavar='PORT', type=int,
-                        default=8066, dest='port',
-                        help='port to listen on')
-    parser.add_argument('-a', '--address', metavar='ADDRESS',
-                        default='0.0.0.0', dest='address',
-                        help='address to listen on')
-    parser.add_argument('--stop-after-a-moment', help=SUPPRESS,
-                        default=False, dest='stop_later',
-                        action='store_true')
-    pacifica_auth_arguments(parser)
-    args = parser.parse_args(argv)
-    social_settings(args, User, 'pacifica.ingest.orm.User')
-    stop_later(args.stop_later)
+def _mount_config(configparser: ConfigParser):
     common_config = {
         '/': {
             'error_page.default': error_page_default,
             'request.dispatch': cherrypy.dispatch.MethodDispatcher()
         }
     }
-    cherrypy.tree.mount(UploadSession(), '/session', config=common_config)
-    cherrypy.config.update({
-        'server.socket_host': args.address,
-        'server.socket_port': args.port
-    })
-    cherrypy.quickstart(Root(args.sa_module, args.app_dir), '/', config={
-        '/': {},
-        "/swagger.yaml": {
-            "tools.staticfile.on": True,
-            "tools.staticfile.filename": os.path.join(
-                os.path.dirname(__file__), "swagger.yaml"
-            ),
-        },
-    })
+    cherrypy.tree.mount(UploadSession(configparser), '/session', config=common_config)
+    ingest_config(configparser)
+
+
+def main(argv=None):
+    """Main method to start the httpd server."""
+    quickstart(argv, 'Run the ingest server.', User, 'pacifica.ingest.orm.User',
+               os.path.dirname(__file__), _mount_config)
 
 
 def cmd(argv=None):
     """Command line admin tool for managing ingest."""
-    parser = ArgumentParser(description='Admin command line tool.')
-    parser.add_argument(
-        '-c', '--config', metavar='CONFIG', type=str, default=CONFIG_FILE,
-        dest='config', help='ingest config file'
-    )
+    parser = create_argparser(argv, 'Admin command line tool.')
     parser.set_defaults(func=lambda x: parser.print_help())
     subparsers = parser.add_subparsers(help='sub-command help')
     setup_job_subparser(subparsers)
     setup_db_subparser(subparsers)
     args = parser.parse_args(argv)
-    return args.func(args)
+    configparser = create_configparser(args, ingest_config)
+    return args.func(args, configparser)
 
 
 def setup_job_subparser(subparsers):
@@ -107,15 +60,14 @@ def setup_db_subparser(subparsers):
         'dbsync',
         description='Update or Create the Database.'
     )
-    pacifica_auth_arguments(db_parser)
     db_parser.set_defaults(func=dbsync)
 
 
-def job_output(args):
+def job_output(args, configparser):
     """Dump the jobs requested from the command line."""
     sessions = []
     # pylint: disable=invalid-name
-    with get_db_session() as db:
+    with get_db_session(configparser) as db:
         for job_uuid in args.job_uuids:
             # pylint: disable=no-member
             sessions.append(db.query(Session).filter_by(uuid=job_uuid).first())
@@ -123,16 +75,17 @@ def job_output(args):
     return 0
 
 
-def dbsync(args):
+def dbsync(_args, configparser):
     """Create/Update the database schema to current code."""
-    Base.metadata.create_all(args.engine)
+    engine = create_engine(configparser.get('database', 'db_url'))
+    Base.metadata.create_all(engine)
     cherrypy.config.update({
         'SOCIAL_AUTH_USER_MODEL': 'pacifica.ingest.orm.User',
     })
     # this needs to be imported after cherrypy settings are applied.
     # pylint: disable=import-outside-toplevel
     from social_cherrypy.models import SocialBase
-    SocialBase.metadata.create_all(args.engine)
+    SocialBase.metadata.create_all(engine)
     return 0
 
 

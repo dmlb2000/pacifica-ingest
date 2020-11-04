@@ -1,18 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """File transfer backend module."""
+from configparser import ConfigParser
 from importlib import import_module
-from ..config import get_config
 
 
 class FileXFerEngine:
     """Engine to call the appropriate backend implementation."""
 
-    def __init__(self):
+    def __init__(self, configparser: ConfigParser):
         """Create backend module."""
-        modulename = '.{}'.format(get_config().get('ingest', 'transfer_backend'))
-        classname = 'FileXFer{}'.format(get_config().get('ingest', 'transfer_backend').upper())
-        self._backend = getattr(import_module(modulename, 'pacifica.ingest.filexfer'), classname)()
+        modulename = '.{}'.format(configparser.get('ingest', 'transfer_backend'))
+        classname = 'FileXFer{}'.format(configparser.get('ingest', 'transfer_backend').upper())
+        self._backend = getattr(import_module(modulename, 'pacifica.ingest.filexfer'), classname)(configparser)
 
     def generate_user_auth(self, session):
         """Call the backend generate user auth."""

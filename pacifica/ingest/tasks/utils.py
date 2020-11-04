@@ -4,13 +4,12 @@
 from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from ..config import get_config
 
 
 @contextmanager
-def get_db_session():
+def get_db_session(configparser):
     """Context to create sqlalchemy engine."""
-    engine = create_engine(get_config().get('database', 'db_url'), echo=False)
+    engine = create_engine(configparser.get('database', 'db_url'), echo=False)
     session = scoped_session(sessionmaker(autoflush=True, autocommit=False))
     session.configure(bind=engine)
     try:
