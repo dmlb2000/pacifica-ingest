@@ -15,6 +15,7 @@ from .config import ingest_config
 
 
 def _mount_config(configparser: ConfigParser):
+    ingest_config(configparser)
     common_config = {
         '/': {
             'error_page.default': error_page_default,
@@ -22,7 +23,6 @@ def _mount_config(configparser: ConfigParser):
         }
     }
     cherrypy.tree.mount(UploadSession(configparser), '/session', config=common_config)
-    ingest_config(configparser)
 
 
 def main(argv=None):
