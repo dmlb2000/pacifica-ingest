@@ -27,7 +27,6 @@ class UploadSession:
     def __init__(self, configparser: ConfigParser):
         """Create the upload session."""
         super().__init__()
-        self.session_path = configparser.get('ingest', 'session_path')
         self._xfer_engine = FileXFerEngine(configparser)
 
     @cherrypy.tools.json_out(handler=json_handler)

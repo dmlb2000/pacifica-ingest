@@ -28,9 +28,8 @@ class FileXFerSSH(FileXFerBase):
     def __init__(self, configparser: ConfigParser):
         """Create and assign instance variables."""
         super().__init__(configparser)
-        self.session_path = configparser.get('ingest', 'session_path')
+        self.configparser = configparser
         self.username = None
-        self.ssh_auth_keys_dir = configparser.get('ingest', 'ssh_auth_keys_dir')
 
     def generate_user_auth(self, session: Session) -> None:
         """Generate the ssh authentication username and password."""
@@ -58,7 +57,7 @@ class FileXFerSSH(FileXFerBase):
     def create_session(self, session: Session) -> None:
         """Create local user and directory for them to upload."""
         user_auth = loads(session.user_auth)
-        home_dir = join(self.session_path, self.username)
+        home_dir = join(self.configparser.get('ingest', 'session_path'), self.username)
         run(
             [
                 '/usr/sbin/useradd',
@@ -81,7 +80,7 @@ class FileXFerSSH(FileXFerBase):
         chmod(home_dir, 0o750)
         chown(upload_dir, user_pwinfo.pw_uid, user_pwinfo.pw_gid)
         chmod(upload_dir, 0o700)
-        config_filename = join(self.ssh_auth_keys_dir, self.username)
+        config_filename = join(self.configparser.get('ingest', 'ssh_auth_keys_dir'), self.username)
         with open(config_filename, 'w') as file_fd:
             file_fd.write('{}\n'.format(user_auth['public_key']))
         user_pwinfo = getpwnam(self.username)
@@ -92,8 +91,8 @@ class FileXFerSSH(FileXFerBase):
         """Delete a user session."""
         user_auth = loads(session.user_auth)
         username = user_auth['username']
-        config_filename = join(self.ssh_auth_keys_dir, username)
-        home_dir = join(self.session_path, username)
+        config_filename = join(self.configparser.get('ingest', 'ssh_auth_keys_dir'), username)
+        home_dir = join(self.configparser.get('ingest', 'session_path'), username)
         if isfile(config_filename):
             unlink(config_filename)
         rmtree(home_dir, ignore_errors=True)
