@@ -34,8 +34,6 @@ def ingest_config(configparser: ConfigParser):
     configparser.add_section('archiveinterface')
     configparser.set('archiveinterface', 'embedded', getenv(
         'ARCHIVEINTERFACE_EMBEDDED', 'True'))
-    configparser.set('archiveinterface', 'use_id2filename', getenv(
-        'ARCHIVEINTERFACE_ID2FILENAME', 'True'))
     configparser.set('archiveinterface', 'prefix', getenv(
         'ARCHIVEINTERFACE_PREFIX', '/tmp/archive'))
     configparser.set('archiveinterface', 'url', getenv(

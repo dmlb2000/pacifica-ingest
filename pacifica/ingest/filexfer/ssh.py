@@ -3,13 +3,14 @@
 """File transfer ssh backend module."""
 from configparser import ConfigParser
 from os import unlink, mkdir, chown, chmod, walk
-from os.path import join, isfile, normpath
+from os.path import join, isfile, normpath, relpath
 from shutil import rmtree
 from pwd import getpwnam
 import string
 import random
 from json import dumps, loads
 from subprocess import run
+import psutil
 from sqlalchemy.orm import Session as SQLSession
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -89,6 +90,14 @@ class FileXFerSSH(FileXFerBase):
         chown(config_filename, user_pwinfo.pw_uid, user_pwinfo.pw_gid)
         chmod(config_filename, 0o400)
 
+    @staticmethod
+    def _kill_pids(username):
+        """Kill all the pids running under username."""
+        for pid in psutil.pids():
+            proc = psutil.Process(pid)
+            if proc.username() == username:
+                proc.kill()
+
     def delete_session(self, session: Session) -> None:
         """Delete a user session."""
         user_auth = loads(session.user_auth)
@@ -98,6 +107,7 @@ class FileXFerSSH(FileXFerBase):
         if isfile(config_filename):
             unlink(config_filename)
         rmtree(home_dir, ignore_errors=True)
+        self._kill_pids(username)
         run(
             [
                 '/usr/sbin/userdel',
@@ -112,8 +122,7 @@ class FileXFerSSH(FileXFerBase):
         username = user_auth['username']
         home_dir = join(self.configparser.get('ingest', 'session_path'), username)
         upload_dir = join(home_dir, 'upload')
-        num_files = 0
-        for root, dirs, files in walk(upload_dir):
+        for root, _dirs, files in walk(upload_dir):
             for filename in files:
                 if isfile(join(root, filename)):
                     yield (root, filename)
@@ -134,12 +143,11 @@ class FileXFerSSH(FileXFerBase):
             file_meta.append({
                 'id': file_id,
                 'filepath': normpath(join(relpath(root, upload_dir), filename)),
-                'hashtype': self.configparser.get('ingest', 'hashtype')
-                'hashsum': hash_local_file(configparser, file_path)
+                'hashtype': self.configparser.get('ingest', 'hashtype'),
+                'hashsum': hash_local_file(self.configparser, file_path),
             })
             index += 1
             send_file(self.configparser, file_id, file_path)
             session.task_percent = float((index/float(file_count))*100)
             db.add(session)
             db.commit()
-        

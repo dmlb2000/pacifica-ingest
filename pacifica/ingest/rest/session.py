@@ -52,6 +52,7 @@ class UploadSession:
             session.processing = True
             cherrypy.request.db.add(session)
             cherrypy.request.db.commit()
+            print("Trying to commit session {}".format(session.uuid))
             session.task_uuid = commit_session.delay(session.uuid).id
         cherrypy.request.db.add(session)
         return session
@@ -66,10 +67,12 @@ class UploadSession:
             return [
                 {
                     'session': session.uuid,
+                    'uuid': session.uuid,
                     'name': session.name,
                     'processing': session.processing,
                     'complete': session.complete,
-                    'task_percent': session.task_percent
+                    'task_percent': session.task_percent,
+                    'exception': session.exception
                 }
                 for session in cherrypy.request.db.query(Session).filter_by(user_uuid=cherrypy.request.user.uuid)
             ]

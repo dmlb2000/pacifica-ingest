@@ -29,6 +29,7 @@ setup(
     install_requires=[
         'celery',
         'cherrypy',
+        'psutil',
         'pacifica-auth>=1.1.0',
         'requests'
     ]
