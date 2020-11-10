@@ -64,7 +64,13 @@ class UploadSession:
         """Get an existing session."""
         if not uuid:
             return [
-                {'session': session.uuid, 'name': session.name}
+                {
+                    'session': session.uuid,
+                    'name': session.name,
+                    'processing': session.processing,
+                    'complete': session.complete,
+                    'task_percent': session.task_percent
+                }
                 for session in cherrypy.request.db.query(Session).filter_by(user_uuid=cherrypy.request.user.uuid)
             ]
         session = cherrypy.request.db.query(Session).filter_by(uuid=uuid).first()
