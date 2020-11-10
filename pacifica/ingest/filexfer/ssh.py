@@ -2,18 +2,20 @@
 # -*- coding: utf-8 -*-
 """File transfer ssh backend module."""
 from configparser import ConfigParser
-from os import unlink, mkdir, chown, chmod
-from os.path import join, isfile
+from os import unlink, mkdir, chown, chmod, walk
+from os.path import join, isfile, normpath
 from shutil import rmtree
 from pwd import getpwnam
 import string
 import random
 from json import dumps, loads
 from subprocess import run
+from sqlalchemy.orm import Session as SQLSession
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from .abstract import FileXFerBase
+from .utils import get_unique_id, hash_local_file, send_file
 from ..orm import Session
 
 
@@ -103,3 +105,41 @@ class FileXFerSSH(FileXFerBase):
             ],
             check=True
         )
+
+    def _file_list(self, session: Session):
+        """Yield the regular filenames in the session upload directory."""
+        user_auth = loads(session.user_auth)
+        username = user_auth['username']
+        home_dir = join(self.configparser.get('ingest', 'session_path'), username)
+        upload_dir = join(home_dir, 'upload')
+        num_files = 0
+        for root, dirs, files in walk(upload_dir):
+            for filename in files:
+                if isfile(join(root, filename)):
+                    yield (root, filename)
+
+    def commit_session(self, db: SQLSession, session: Session) -> list:
+        """Commit the session to the archive interface."""
+        user_auth = loads(session.user_auth)
+        username = user_auth['username']
+        home_dir = join(self.configparser.get('ingest', 'session_path'), username)
+        upload_dir = join(home_dir, 'upload')
+        file_count = len(list(self._file_list(session)))
+        file_range = get_unique_id(self.configparser, file_count)
+        file_meta = []
+        index = 0
+        for root, filename in self._file_list(session):
+            file_id = str(int(file_range['startIndex'])+index)
+            file_path = normpath(join(root, filename))
+            file_meta.append({
+                'id': file_id,
+                'filepath': normpath(join(relpath(root, upload_dir), filename)),
+                'hashtype': self.configparser.get('ingest', 'hashtype')
+                'hashsum': hash_local_file(configparser, file_path)
+            })
+            index += 1
+            send_file(self.configparser, file_id, file_path)
+            session.task_percent = float((index/float(file_count))*100)
+            db.add(session)
+            db.commit()
+        

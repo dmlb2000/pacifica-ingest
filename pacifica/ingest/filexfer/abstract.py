@@ -3,6 +3,7 @@
 """Abstract base class for backends."""
 from configparser import ConfigParser
 import abc
+from sqlalchemy.orm import Session as SQLSession
 from ..orm import Session
 
 
@@ -42,4 +43,14 @@ class FileXFerBase(abc.ABC):
 
         This deletes the local session and everything else you
         did in `create_session()`.
+        """
+
+    @abc.abstractmethod
+    def commit_session(self, db: SQLSession, session: Session) -> list:
+        """
+        Commit the files in the session to the archive.
+
+        This commits the files in the session to the archive
+        interface service. This can either be by transfer or
+        by moving.
         """

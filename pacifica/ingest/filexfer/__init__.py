@@ -25,3 +25,7 @@ class FileXFerEngine:
     def delete_session(self, session):
         """Call the backend delete session."""
         self._backend.delete_session(session)
+
+    def commit_session(self, db, session):
+        """Call the backend commit session."""
+        return self._backend.commit_session(db, session)

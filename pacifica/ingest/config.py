@@ -10,6 +10,8 @@ def ingest_config(configparser: ConfigParser):
     configparser.add_section('ingest')
     configparser.set('ingest', 'transfer_size', getenv(
         'TRANSFER_SIZE', '4 Mb'))
+    configparser.set('ingest', 'hashtype', getenv(
+        'HASHTYPE', 'sha256'))
     configparser.set('ingest', 'transfer_backend', getenv(
         'TRANSFER_BACKEND', 'ssh'))
     configparser.set('ingest', 'upload_path', getenv(
