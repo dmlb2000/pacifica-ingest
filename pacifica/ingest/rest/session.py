@@ -52,7 +52,7 @@ class UploadSession:
             session.processing = True
             cherrypy.request.db.add(session)
             cherrypy.request.db.commit()
-            print("Trying to commit session {}".format(session.uuid))
+            print('Trying to commit session {}'.format(session.uuid))
             session.task_uuid = commit_session.delay(session.uuid).id
         cherrypy.request.db.add(session)
         return session

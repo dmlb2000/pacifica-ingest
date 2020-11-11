@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """File transfer ssh backend module."""
 from configparser import ConfigParser
-from os import unlink, mkdir, chown, chmod, walk
+from os import unlink, mkdir, chown, chmod, walk, stat
 from os.path import join, isfile, normpath, relpath
 from shutil import rmtree
 from pwd import getpwnam
@@ -143,6 +143,7 @@ class FileXFerSSH(FileXFerBase):
             file_meta.append({
                 'id': file_id,
                 'filepath': normpath(join(relpath(root, upload_dir), filename)),
+                'filesize': stat(file_path).st_size,
                 'hashtype': self.configparser.get('ingest', 'hashtype'),
                 'hashsum': hash_local_file(self.configparser, file_path),
             })
@@ -151,3 +152,4 @@ class FileXFerSSH(FileXFerBase):
             session.task_percent = float((index/float(file_count))*100)
             db.add(session)
             db.commit()
+        return file_meta

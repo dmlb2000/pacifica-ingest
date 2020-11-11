@@ -49,6 +49,7 @@ def move_file(configparser, file_id, filepath):
     )
     backend.patch(file_id, filepath)
 
+
 def _int_move_file(configparser, file_id, filepath):
     """Move the file into the archive."""
     archive_url = configparser.get('archiveinterface', 'url')

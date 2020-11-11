@@ -25,7 +25,7 @@ class Session(Base):
     task_percent = Column(Float(), default=0.0)
     user_auth = Column(Text(), default='')
     exception = Column(Text(), default='')
-    jsonapi_data = Column(Text(), default='')
+    metadata_doc = Column(Text(), default='')
     processing = Column(Boolean(), default=False)
     complete = Column(Boolean(), default=False)
     user_uuid = Column(String(40), ForeignKey('user.uuid'), index=True)

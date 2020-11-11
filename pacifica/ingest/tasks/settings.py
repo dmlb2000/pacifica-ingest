@@ -13,7 +13,7 @@ configparser = create_configparser(
     ingest_config
 )
 _broker_dir = configparser.get('celery', 'filesystem_broker_dir')
-broker_transport_options=defaultdict(
+broker_transport_options = defaultdict(
     data_folder_in=join(_broker_dir, 'out'),
     data_folder_out=join(_broker_dir, 'out'),
     data_folder_processed=join(_broker_dir, 'processed')

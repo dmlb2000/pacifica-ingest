@@ -39,16 +39,16 @@ def ingest_config(configparser: ConfigParser):
     configparser.set('archiveinterface', 'url', getenv(
         'ARCHIVEINTERFACE_URL', 'http://127.0.0.1:8080'))
     configparser.add_section('metadata')
-    # one of 'drupal_jsonapi', 'none'
+    # one of 'drupaljsonapi', 'none'
     configparser.set('metadata', 'type', getenv(
         'METADATA_TYPE', 'drupal_jsonapi'))
-    configparser.set('metadata', 'drupal_url', getenv(
-        'METADATA_DRUPAL_URL', 'http://127.0.0.1/jsonapi'))
-    configparser.set('metadata', 'drupal_user', getenv(
-        'METADATA_DRUPAL_USER', 'admin'))
-    configparser.set('metadata', 'drupal_key', getenv(
-        'METADATA_DRUPAL_KEY', 'adminsuperkey'))
-    configparser.set('metadata', 'drupal_content_type', getenv(
-        'METADATA_DRUPAL_CONTENT_TYPE', 'data_upload'))
-    configparser.set('metadata', 'drupal_field', getenv(
-        'METADATA_DRUPAL_FIELD', 'field_file_data'))
+    configparser.add_section('drupal')
+    configparser.set('drupal', 'url', getenv(
+        'DRUPAL_URL', 'http://127.0.0.1/jsonapi'))
+    configparser.set('drupal', 'content_type', getenv(
+        'DRUPAL_CONTENT_TYPE', 'pacifica_data_upload'))
+    configparser.set('drupal', 'field', getenv(
+        'DRUPAL_FILE_FIELD', 'field_file_data'))
+    configparser.set('drupal', 'content_author', getenv(
+        'DRUPAL_CONTENT_AUTHOR', 'admin'))
+    configparser.add_section('drupal_headers')

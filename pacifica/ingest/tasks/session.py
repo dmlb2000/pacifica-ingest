@@ -9,6 +9,8 @@ from .utils import get_db_session
 from .settings import configparser
 from ..orm import Session
 from ..filexfer import FileXFerEngine
+from ..metaxfer import MetaXFerEngine
+
 
 class SetErrorTask(Task):
 
@@ -36,15 +38,19 @@ Backtrace:
         finally:
             print('{0!r} failed: {1!r}'.format(task_id, exc))
 
+
 @app.task(base=SetErrorTask)
 def commit_session(session_uuid):
     """Commit the session to the system."""
     xferengine = FileXFerEngine(configparser)
+    metaengine = MetaXFerEngine(configparser)
     # pylint: disable=invalid-name
     with get_db_session(configparser) as db:
         # pylint: disable=no-member
         session = db.query(Session).filter_by(uuid=session_uuid).first()
-        xferengine.commit_session(db, session)
+        file_meta = xferengine.commit_session(db, session)
+        metaengine.upload(db, session, file_meta)
+        xferengine.delete_session(session)
         session.complete = True
         db.add(session)
         db.commit()
