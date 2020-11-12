@@ -5,7 +5,7 @@ from configparser import ConfigParser
 from os import unlink, mkdir, chown, chmod, walk, stat
 from os.path import join, isfile, normpath, relpath
 from shutil import rmtree
-from pwd import getpwnam
+from pwd import getpwnam, getpwall
 import string
 import random
 from json import dumps, loads
@@ -50,9 +50,8 @@ class FileXFerSSH(FileXFerBase):
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption()
         )
-        self.username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=30))
         session.user_auth = dumps({
-            'username': self.username,
+            'username': ''.join(random.choices(string.ascii_lowercase + string.digits, k=30)),
             'private_key': pem.decode('utf-8'),
             'public_key': public_key.decode('utf-8')
         })
@@ -60,7 +59,8 @@ class FileXFerSSH(FileXFerBase):
     def create_session(self, session: Session) -> None:
         """Create local user and directory for them to upload."""
         user_auth = loads(session.user_auth)
-        home_dir = join(self.configparser.get('ingest', 'session_path'), self.username)
+        username = user_auth['username']
+        home_dir = join(self.configparser.get('ingest', 'session_path'), username)
         run(
             [
                 '/usr/sbin/useradd',
@@ -71,11 +71,11 @@ class FileXFerSSH(FileXFerBase):
                 'sftponly',
                 '--shell',
                 '/sbin/nologin',
-                self.username
+                username
             ],
             check=True
         )
-        user_pwinfo = getpwnam(self.username)
+        user_pwinfo = getpwnam(username)
         upload_dir = join(home_dir, 'upload')
         mkdir(home_dir)
         mkdir(upload_dir)
@@ -83,10 +83,9 @@ class FileXFerSSH(FileXFerBase):
         chmod(home_dir, 0o750)
         chown(upload_dir, user_pwinfo.pw_uid, user_pwinfo.pw_gid)
         chmod(upload_dir, 0o700)
-        config_filename = join(self.configparser.get('ingest', 'ssh_auth_keys_dir'), self.username)
+        config_filename = join(self.configparser.get('ingest', 'ssh_auth_keys_dir'), username)
         with open(config_filename, 'w') as file_fd:
             file_fd.write('{}\n'.format(user_auth['public_key']))
-        user_pwinfo = getpwnam(self.username)
         chown(config_filename, user_pwinfo.pw_uid, user_pwinfo.pw_gid)
         chmod(config_filename, 0o400)
 
@@ -108,13 +107,14 @@ class FileXFerSSH(FileXFerBase):
             unlink(config_filename)
         rmtree(home_dir, ignore_errors=True)
         self._kill_pids(username)
-        run(
-            [
-                '/usr/sbin/userdel',
-                username
-            ],
-            check=True
-        )
+        if username in [u.pw_name for u in getpwall()]:
+            run(
+                [
+                    '/usr/sbin/userdel',
+                    username
+                ],
+                check=True
+            )
 
     def _file_list(self, session: Session):
         """Yield the regular filenames in the session upload directory."""

@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """Abstract class for metadata transfer."""
+from configparser import ConfigParser
 import abc
 from sqlalchemy.orm import Session as SQLSession
 from ..orm import Session
-from ..tasks.settings import configparser
 
 
 class MetaXFerBase(abc.ABC):
@@ -14,7 +14,7 @@ class MetaXFerBase(abc.ABC):
     and/or uploaded to something.
     """
 
-    def __init__(self):
+    def __init__(self, configparser: ConfigParser):
         """Create the object by trying to find the config parser."""
         self.configparser = configparser
 
