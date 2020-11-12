@@ -48,7 +48,7 @@ class SessionEncoder(json.JSONEncoder):
             ret = {}
             for key in plain_keys:
                 ret[key] = getattr(o, key)
-            for key in ['user_auth', 'jsonapi_data']:
+            for key in ['user_auth', 'metadata_doc']:
                 ret[key] = ''
                 if getattr(o, key):
                     ret[key] = json.loads(getattr(o, key))
@@ -68,7 +68,7 @@ def as_session(db, dct):
         for key in ['name', 'task_uuid', 'task_percent', 'exception', 'processing', 'complete', 'user_uuid']:
             if dct.get(key, False):
                 setattr(session, key, dct[key])
-        for key in ['user_auth', 'jsonapi_data']:
+        for key in ['user_auth', 'metadata_doc']:
             if dct.get(key, False):
                 setattr(session, key, json.dumps(dct[key]))
         for key in ['created', 'updated']:
